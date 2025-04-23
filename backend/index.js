@@ -6,7 +6,8 @@ import cors from 'cors';
 
 import connectDB from './config/db.js';
 import userRoutes from './routes/userRoutes.js';
-// import chatRoutes from './routes/chatRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
 // import socketHandler from './socket/index.js';
 
 dotenv.config();
@@ -22,7 +23,8 @@ app.use(express.json());
 connectDB();
 
 app.use('/api/v1/user', userRoutes);
-// app.use('/api/chat', chatRoutes);
+app.use('/api/v1/chat', chatRoutes);
+app.use('/api/v1/message', messageRoutes);
 
 // socketHandler(io);
 

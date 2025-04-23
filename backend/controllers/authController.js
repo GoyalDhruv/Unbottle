@@ -12,14 +12,15 @@ export const registerUser = async (req, res) => {
 
         const hashed = await hashPassword(password);
 
+        // const token = generateToken(user._id);
+
         const user = await User.create({ username, password: hashed });
 
-        const token = generateToken(user._id);
 
         res.status(201).json({
             _id: user._id,
             username: user.username,
-            token,
+            // token,
         });
     } catch (err) {
         res.status(500).json({ message: 'Server Error', error: err.message });
@@ -41,6 +42,7 @@ export const loginUser = async (req, res) => {
         }
 
         const token = generateToken(user._id);
+        await User.findByIdAndUpdate(user._id, { token });
 
         res.status(200).json({
             _id: user._id,
