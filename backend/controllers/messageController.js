@@ -1,5 +1,9 @@
+import crypto from 'crypto-js';
 import Message from '../models/MessageModel.js';
 import Chat from '../models/ChatModel.js';
+import dotenv from 'dotenv';
+dotenv.config();
+
 
 export const sendMessage = async (req, res) => {
     const { chatId, content } = req.body;
@@ -15,17 +19,17 @@ export const sendMessage = async (req, res) => {
     }
 
     try {
+        const encryptedContent = crypto.AES.encrypt(content, process.env.MSG_SECRET).toString();
         const message = await Message.create({
             sender,
             chat: chatId,
-            content,
+            content: encryptedContent,
         });
 
         await Chat.findByIdAndUpdate(chatId, { lastMessage: message._id });
 
         const populatedMessage = await Message.findById(message._id)
-            .populate('sender', 'username _id')
-        // .populate('chat');
+            .populate('sender', 'username _id');
 
         res.status(201).json(populatedMessage);
     } catch (error) {
@@ -45,7 +49,12 @@ export const getMessagesForChat = async (req, res) => {
             .populate('sender', 'username _id')
             .sort({ createdAt: 1 });
 
-        res.status(200).json(messages);
+        const decryptedMessages = messages.map((message) => {
+            const decryptedContent = crypto.AES.decrypt(message.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
+            return { ...message.toObject(), content: decryptedContent };
+        });
+
+        res.status(200).json(decryptedMessages);
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch messages', error });
     }
