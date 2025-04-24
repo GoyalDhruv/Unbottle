@@ -6,6 +6,19 @@ export const accessOrCreateChat = async (req, res) => {
 
     if (!userId) return res.status(400).json({ message: 'UserId is required' });
 
+    const currentUser = await User.findById(currentUserId);
+    const targetUser = await User.findById(userId);
+
+    if (!targetUser) return res.status(404).json({ message: "Target user not found" });
+
+    if (
+        currentUser.blockedUsers.includes(userId) ||
+        targetUser.blockedUsers.includes(currentUserId)
+    ) {
+        return res.status(403).json({ message: "You cannot chat with this user" });
+    }
+
+
     try {
         let chat = await Chat.findOne({
             participants: { $all: [currentUserId, userId], $size: 2 },

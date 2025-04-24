@@ -19,7 +19,26 @@ export const sendMessage = async (req, res) => {
     }
 
     try {
+        const chat = await Chat.findById(chatId).populate('participants', '_id blockedUsers');
+        if (!chat || !chat.participants.some(p => p._id.toString() === sender)) {
+            return res.status(403).json({ message: 'You are not a participant in this chat' });
+        }
+
+        const receiver = chat.participants.find(p => p._id.toString() !== sender);
+        if (!receiver) {
+            return res.status(400).json({ message: 'Could not identify recipient in chat' });
+        }
+
+        const senderUser = chat.participants.find(p => p._id.toString() === sender);
+        if (
+            senderUser.blockedUsers.includes(receiver._id) ||
+            receiver.blockedUsers.includes(sender)
+        ) {
+            return res.status(403).json({ message: 'You cannot send messages to this user' });
+        }
+
         const encryptedContent = crypto.AES.encrypt(content, process.env.MSG_SECRET).toString();
+
         const message = await Message.create({
             sender,
             chat: chatId,
