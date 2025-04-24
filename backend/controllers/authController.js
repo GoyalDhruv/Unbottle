@@ -1,6 +1,21 @@
 import User from '../models/UserModel.js';
 import { hashPassword, matchPassword, generateToken } from '../utils/auth.js';
 
+const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+
+
 export const registerUser = async (req, res) => {
     const { username, password } = req.body;
 
@@ -91,5 +106,52 @@ export const unblockUser = async (req, res) => {
     } catch (error) {
         console.error("Error unblocking user:", error);
         res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+
+export const getNearbyUsers = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const radiusInKm = parseFloat(req.query.radius) || 5;
+
+        const currentUser = await User.findById(userId, 'location');
+        if (!currentUser || !currentUser.location) {
+            return res.status(400).json({ message: 'User location not found' });
+        }
+
+        const { lat, lng } = currentUser.location;
+
+        const userLocations = await User.find(
+            {
+                _id: { $ne: userId },
+                isOnline: true,
+                location: { $ne: null },
+                blockedUsers: { $nin: [userId] },
+            },
+            'location _id username isOnline'
+        );
+
+        const nearby = userLocations
+            .map((user) => ({
+                ...user,
+                distance: getDistanceFromLatLonInKm(
+                    lat,
+                    lng,
+                    user.location.lat,
+                    user.location.lng
+                ),
+            }))
+            .filter((user) => user.distance <= radiusInKm);
+
+        res.json(nearby.map((user) => ({
+            _id: user._id,
+            username: user.username,
+            location: user.location,
+            isOnline: user.isOnline,
+        })));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error fetching nearby users' });
     }
 };
