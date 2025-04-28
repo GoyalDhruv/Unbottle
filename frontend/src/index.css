@@ -1,1 +1,9 @@
 @import "tailwindcss";
+
+.heading-color {
+    @apply bg-gradient-to-r from-[#6d67ff] to-[#f16186] bg-clip-text text-transparent;
+}
+
+.primary-btn {
+    @apply !rounded-full !text-white !bg-[#6d67ff] !px-8 w-full
+}
