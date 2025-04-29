@@ -8,16 +8,19 @@ import { UserProvider } from './context/userContext';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import { toasterConfig } from './utils/toastConfig';
+import { SocketProvider } from './context/SocketContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <ChakraProvider>
     <Router>
       <UserProvider>
         <AuthProvider>
-          <>
-            <App />
-            <Toaster {...toasterConfig} />
-          </>
+          <SocketProvider>
+            <>
+              <App />
+              <Toaster {...toasterConfig} />
+            </>
+          </SocketProvider>
         </AuthProvider>
       </UserProvider>
     </Router>

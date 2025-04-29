@@ -7,3 +7,12 @@
 .primary-btn {
     @apply !rounded-full !text-white !bg-[#6d67ff] !px-8 w-full
 }
+
+.chat-messages-container {
+    overflow-y: auto;
+    height: calc(100vh - 140px);
+}
+
+.chat-messages-container::-webkit-scrollbar {
+    display: none;
+}

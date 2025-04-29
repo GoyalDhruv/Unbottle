@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { getDataFromLocalStorage } from '../utils/helper';
 
 const AuthContext = createContext();
 
@@ -7,7 +8,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = JSON.parse(localStorage.getItem('unbottle'));
+        const token = getDataFromLocalStorage()?.token;
         setIsAuthenticated(!!token);
         setLoading(false);
     }, []);

@@ -1,4 +1,3 @@
-// src/components/BottomNav.jsx
 import { Box, IconButton } from '@chakra-ui/react';
 import { ChatIcon, SearchIcon, PhoneIcon } from '@chakra-ui/icons';
 import { useNavigate, useLocation } from 'react-router-dom';

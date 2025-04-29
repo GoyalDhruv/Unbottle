@@ -11,6 +11,7 @@ const ProtectedRoute = React.lazy(() => import('./routes/ProtectedRoute'))
 const ChatsPage = React.lazy(() => import('./pages/app/Chats'))
 const FindUsersPage = React.lazy(() => import('./pages/app/FindUsers'))
 const CallsPage = React.lazy(() => import('./pages/app/Calls'))
+const ChatByIdPage = React.lazy(() => import('./pages/app/ChatById'))
 
 function App() {
 
@@ -28,6 +29,7 @@ function App() {
               <Route path="chats" element={<ChatsPage />} />
               <Route path="find" element={<FindUsersPage />} />
               <Route path="calls" element={<CallsPage />} />
+              <Route path="chat/:id" element={<ChatByIdPage />} />
             </Route>
           </Route>
         </Routes>

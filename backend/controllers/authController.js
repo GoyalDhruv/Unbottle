@@ -1,20 +1,6 @@
+import { getDistanceFromLatLonInKm } from '../helper.js';
 import User from '../models/UserModel.js';
 import { hashPassword, matchPassword, generateToken } from '../utils/auth.js';
-
-const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) ** 2;
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-};
-
 
 export const registerUser = async (req, res) => {
     const { username, password, lat, lng } = req.body;
@@ -115,13 +101,13 @@ export const unblockUser = async (req, res) => {
     }
 };
 
-
 export const getNearbyUsers = async (req, res) => {
     try {
         const userId = req.user.id;
         const radiusInKm = parseFloat(req.query.radius) || 5;
 
         const currentUser = await User.findById(userId, 'location');
+
         if (!currentUser || !currentUser.location) {
             return res.status(400).json({ message: 'User location not found' });
         }
@@ -131,7 +117,6 @@ export const getNearbyUsers = async (req, res) => {
         const userLocations = await User.find(
             {
                 _id: { $ne: userId },
-                isOnline: true,
                 location: { $ne: null },
                 blockedUsers: { $nin: [userId] },
             },
@@ -139,25 +124,47 @@ export const getNearbyUsers = async (req, res) => {
         );
 
         const nearby = userLocations
-            .map((user) => ({
-                ...user,
-                distance: getDistanceFromLatLonInKm(
+            .map((user) => {
+                const distance = getDistanceFromLatLonInKm(
                     lat,
                     lng,
                     user.location.lat,
                     user.location.lng
-                ),
-            }))
+                );
+
+                return {
+                    _id: user._id,
+                    username: user.username,
+                    isOnline: user.isOnline,
+                    location: user.location,
+                    distance: parseFloat(distance.toFixed(2)),
+                };
+            })
             .filter((user) => user.distance <= radiusInKm);
 
-        res.json(nearby.map((user) => ({
-            _id: user._id,
-            username: user.username,
-            location: user.location,
-            isOnline: user.isOnline,
-        })));
+        res.status(200).json({ data: nearby, message: 'Nearby users fetched successfully' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching nearby users' });
+    }
+};
+
+export const updateUserLocation = async (req, res) => {
+    try {
+        const { lat, lng } = req.body;
+        const userId = req.user.id;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        user.location = { lat, lng };
+        await user.save();
+
+        res.status(200).json({ message: 'Location updated successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error updating location' });
     }
 };

@@ -2,35 +2,36 @@ import ChatModel from '../models/ChatModel.js';
 import User from '../models/UserModel.js';
 import crypto from 'crypto-js';
 import MessageModel from '../models/MessageModel.js';
+import jwt from 'jsonwebtoken';
 
-const userSocketMap = {};
+const userSocketMap = new Map();
 
-const getSocketIdByUserId = (userId) => userSocketMap[userId];
+const getSocketIdByUserId = (userId) => userSocketMap.get(userId);
 
 const socketHandler = (io) => {
-    io.on('connection', (socket) => {
-        console.log('🔌 New socket connected:', socket.id);
+    // Middleware to authenticate socket
+    io.use((socket, next) => {
+        try {
+            const token = socket.handshake.auth.token;
+            if (!token) return next(new Error('Authentication error'));
 
-        // Register user and map socket ID
-        socket.on('register', async (userId) => {
-            try {
-                if (!userId) return;
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            socket.userId = decoded._id;
+            next();
+        } catch (error) {
+            console.error('Socket auth failed:', error);
+            next(new Error('Authentication error'));
+        }
+    });
 
-                const userIdStr = userId.userId?.toString();
-                if (!userIdStr) return;
+    io.on('connection', async (socket) => {
+        const userId = socket.userId;
+        console.log('🔌 New socket connected:', socket.id, 'for user:', userId);
 
-                userSocketMap[userIdStr] = socket.id;
-                socket.userId = userIdStr;
-
-                console.log(`✅ Registered user ${userIdStr} with socket ID ${socket.id}`);
-
-                await User.findByIdAndUpdate(userIdStr, { isOnline: true, socketId: socket.id });
-
-                socket.broadcast.emit('user_online', userIdStr);
-            } catch (error) {
-                console.error('❌ Error registering user:', error);
-            }
-        });
+        // Register socket
+        userSocketMap.set(userId, socket.id);
+        await User.findByIdAndUpdate(userId, { isOnline: true, socketId: socket.id });
+        socket.broadcast.emit('user_online', userId);
 
         // Send Message Event
         socket.on('send_message', async (newChat) => {
@@ -39,16 +40,10 @@ const socketHandler = (io) => {
                 console.log('📨 send message event:', { chatId, senderId, content });
 
                 const chat = await ChatModel.findById(chatId).populate('participants', '_id username');
-                if (!chat) {
-                    console.log('⚠️ Chat not found');
-                    return;
-                }
+                if (!chat) return console.log('⚠️ Chat not found');
 
                 const isParticipant = chat.participants.some(p => p._id.toString() === senderId);
-                if (!isParticipant) {
-                    console.log('🚫 Sender is not in this chat');
-                    return;
-                }
+                if (!isParticipant) return console.log('🚫 Sender is not in this chat');
 
                 const encryptedContent = crypto.AES.encrypt(content, process.env.MSG_SECRET).toString();
 
@@ -63,13 +58,18 @@ const socketHandler = (io) => {
                 const populatedMessage = await MessageModel.findById(newMessage._id)
                     .populate('sender', '_id username');
 
-                // Emit message to all other participants
+                // Emit to all participants except sender
                 chat.participants.forEach((user) => {
                     const userIdStr = user._id.toString();
-
-                    if (userIdStr === senderId) return;
-
                     const socketId = getSocketIdByUserId(userIdStr);
+
+                    if (userIdStr === senderId) {
+                        if (socketId) {
+                            io.to(socketId).emit('message_sent', populatedMessage);
+                        }
+                        return;
+                    }
+
                     if (socketId) {
                         io.to(socketId).emit('message_received', populatedMessage);
                     } else {
@@ -82,22 +82,23 @@ const socketHandler = (io) => {
             }
         });
 
-        // Disconnect event
+        // Handle disconnect
         socket.on('disconnect', async () => {
             try {
                 console.log('❌ Socket disconnected:', socket.id);
 
-                if (socket.userId) {
-                    delete userSocketMap[socket.userId];
-                    await User.findByIdAndUpdate(socket.userId, { isOnline: false, socketId: null });
-                    console.log(`⛔️ User ${socket.userId} set offline`);
-                    socket.broadcast.emit('user offline', socket.userId);
+                if (userId) {
+                    userSocketMap.delete(userId);
+                    await User.findByIdAndUpdate(userId, { isOnline: false, socketId: null });
+                    socket.broadcast.emit('user_offline', userId);
+                    console.log(`⛔️ User ${userId} set offline`);
                 }
             } catch (error) {
                 console.error('❌ Error during disconnect:', error);
             }
         });
 
+        // Logging all events
         socket.onAny((event, ...args) => {
             console.log(`📡 Event received: ${event}`, args);
         });
