@@ -50,7 +50,10 @@ export const sendMessage = async (req, res) => {
         const populatedMessage = await Message.findById(message._id)
             .populate('sender', 'username _id');
 
-        res.status(201).json(populatedMessage);
+        const decryptedContent = crypto.AES.decrypt(message.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
+        populatedMessage.content = decryptedContent;
+
+        res.status(201).json({ message: 'Message sent successfully', message: populatedMessage });
     } catch (error) {
         res.status(500).json({ message: 'Failed to send message', error });
     }
@@ -73,7 +76,7 @@ export const getMessagesForChat = async (req, res) => {
             return { ...message.toObject(), content: decryptedContent };
         });
 
-        res.status(200).json(decryptedMessages);
+        res.status(200).json({ message: 'Messages fetched successfully', messages: decryptedMessages });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch messages', error });
     }
