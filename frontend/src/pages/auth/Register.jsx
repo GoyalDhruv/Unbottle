@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Text } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
-import PageHeader from '../components/PageHeader';
-import RegisterForm from '../components/Form/RegisterForm';
+import PageHeader from '../../components/PageHeader';
+import RegisterForm from '../../components/Form/RegisterForm';
 
 export default function Register() {
 

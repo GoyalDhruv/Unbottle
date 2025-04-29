@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 
 export const useLocationGranted = () => {
     const [locationGranted, setLocationGranted] = useState(false);
+    const [locationCoordinates, setLocationCoordinates] = useState(null);
 
     useEffect(() => {
         toast.dismiss();
@@ -10,12 +11,10 @@ export const useLocationGranted = () => {
             // Request location permission
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    // If permission is granted, set locationGranted to true
                     setLocationGranted(true);
-                    console.log("Location granted:", position);
+                    setLocationCoordinates(position.coords);
                 },
                 (error) => {
-                    // If there's an error (e.g., permission denied), handle it here
                     setLocationGranted(false);
                     if (error.code === error.PERMISSION_DENIED) {
                         toast.error("We need access to your location to continue. Please enable location services.");
@@ -29,5 +28,5 @@ export const useLocationGranted = () => {
         }
     }, []);
 
-    return locationGranted;
+    return { locationGranted, locationCoordinates };
 };

@@ -3,15 +3,21 @@ import { useLocationGranted } from '../../hooks/useLocationPermission';
 import toast from 'react-hot-toast';
 import { InputField } from '../InputField';
 import { Button } from '@chakra-ui/react';
+import { loginUser } from '../../services/authService';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 function LoginForm() {
 
     const [credentials, setCredentials] = useState({ username: '', password: '' });
     const [submitted, setSubmitted] = useState(false);
+    const navigate = useNavigate()
+    const { login } = useAuth();
 
-    const locationGranted = useLocationGranted();
+    const { locationCoordinates, locationGranted } = useLocationGranted();
 
-    const handleLogin = (e) => {
+
+    const handleLogin = async (e) => {
         e.preventDefault();
         setSubmitted(true);
         const { username, password } = credentials;
@@ -21,9 +27,27 @@ function LoginForm() {
             toast.error('Please allow location access to proceed with login.');
             return;
         }
+        try {
+            const data = {
+                username: credentials.username,
+                password: credentials.password,
+                lat: locationCoordinates.latitude,
+                lng: locationCoordinates.longitude
+            }
 
-        console.log('Logging in:', credentials);
-        toast.success('Login successful!');
+            const response = await loginUser(data);
+            localStorage.setItem('unbottle', JSON.stringify(response));
+
+            login(JSON.stringify(response));
+            navigate('/app/chats');
+            setSubmitted(false);
+            setCredentials({ username: '', password: '' });
+
+            toast.success('Login successful!');
+
+        } catch (error) {
+            toast.error(error?.response?.data?.message);
+        }
     };
 
     const handleChange = (e) => {

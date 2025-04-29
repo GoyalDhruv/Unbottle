@@ -17,7 +17,7 @@ const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
 
 
 export const registerUser = async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, lat, lng } = req.body;
 
     try {
         const userExists = await User.findOne({ username });
@@ -25,17 +25,20 @@ export const registerUser = async (req, res) => {
             return res.status(400).json({ message: 'Username already exists' });
         }
 
+        if (!lat || !lng) return res.status(400).json({ message: 'Location is required' });
+
         const hashed = await hashPassword(password);
 
-        // const token = generateToken(user._id);
 
         const user = await User.create({ username, password: hashed });
-
+        const token = generateToken(user._id);
+        await User.findByIdAndUpdate(user._id, { token, location: { lat, lng } });
 
         res.status(201).json({
             _id: user._id,
             username: user.username,
-            // token,
+            token,
+            location: { lat, lng },
         });
     } catch (err) {
         res.status(500).json({ message: 'Server Error', error: err.message });
@@ -43,7 +46,7 @@ export const registerUser = async (req, res) => {
 };
 
 export const loginUser = async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, lat, lng } = req.body;
 
     try {
         const user = await User.findOne({ username });
@@ -51,18 +54,21 @@ export const loginUser = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
+        if (!lat || !lng) return res.status(400).json({ message: 'Location is required' });
+
         const isMatch = await matchPassword(password, user.password);
         if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid password' });
+            return res.status(401).json({ message: 'Invalid password or username' });
         }
 
         const token = generateToken(user._id);
-        await User.findByIdAndUpdate(user._id, { token });
+        await User.findByIdAndUpdate(user._id, { token, location: { lat, lng } });
 
         res.status(200).json({
             _id: user._id,
             username: user.username,
             token,
+            location: { lat, lng },
         });
     } catch (err) {
         res.status(500).json({ message: 'Server Error', error: err.message });

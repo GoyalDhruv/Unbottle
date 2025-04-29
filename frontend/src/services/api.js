@@ -8,9 +8,11 @@ const api = axios.create({
 api.interceptors.response.use(
     (response) => response,
     (error) => {
+
         if (error.response && error.response.status === 401) {
             const currentPath = window.location.pathname;
-            if (currentPath !== '/') {
+            console.log(currentPath)
+            if (currentPath !== '/' && currentPath !== '/login' && currentPath !== '/register') {
                 window.location.replace('/');
                 toast.error("Unauthorized User");
             }

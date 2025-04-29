@@ -3,15 +3,21 @@ import toast from 'react-hot-toast';
 import { useLocationGranted } from '../../hooks/useLocationPermission';
 import { InputField } from '../InputField';
 import { Button } from '@chakra-ui/react';
+import { useNavigate } from 'react-router-dom';
+import { registerUser } from '../../services/authService';
+import { useAuth } from '../../context/AuthContext';
 
 function RegisterForm() {
 
     const [credentials, setCredentials] = useState({ username: '', password: '' });
     const [submitted, setSubmitted] = useState(false);
+    const navigate = useNavigate()
+    const { login } = useAuth();
 
-    const locationGranted = useLocationGranted();
 
-    const handleRegister = (e) => {
+    const { locationGranted, locationCoordinates } = useLocationGranted();
+
+    const handleRegister = async (e) => {
         e.preventDefault();
         setSubmitted(true);
         const { username, password } = credentials;
@@ -22,9 +28,31 @@ function RegisterForm() {
             toast.error('Please allow location access to proceed with registration.');
             return;
         }
+        if (!locationGranted) {
+            toast.error('Please allow location access to proceed with login.');
+            return;
+        }
+        try {
+            const data = {
+                username: credentials.username,
+                password: credentials.password,
+                lat: locationCoordinates.latitude,
+                lng: locationCoordinates.longitude
+            }
 
-        console.log('Registering:', credentials);
-        toast.success('Registration successful!');
+            const response = await registerUser(data);
+            localStorage.setItem('unbottle', JSON.stringify(response));
+            login(JSON.stringify(response));
+
+            navigate('/app/chats')
+            setSubmitted(false);
+            setCredentials({ username: '', password: '' });
+
+            toast.success('Login successful!');
+
+        } catch (error) {
+            toast.error(error?.response?.data?.message);
+        }
     };
 
     const handleChange = (e) => {
