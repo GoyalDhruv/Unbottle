@@ -19,7 +19,7 @@ function ChatById() {
             const res = await getMessageById(id);
             setMessages(res?.messages || []);
         } catch (error) {
-            console.log(error);
+            console.error(error);
         } finally {
             setLoading(false);
         }
