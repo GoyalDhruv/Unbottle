@@ -62,7 +62,6 @@ export const getUserChats = async (req, res) => {
 
         res.status(200).json({ message: 'Chats fetched successfully', chats: decryptedContent });
     } catch (error) {
-        console.log(error);
         res.status(500).json({ message: 'Failed to fetch chats', error });
     }
 };

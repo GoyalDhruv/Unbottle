@@ -18,7 +18,7 @@ const Chats = () => {
             const res = await getChatsByUser();
             setChats(res?.chats || []);
         } catch (error) {
-            console.log(error);
+            console.error(error);
         } finally {
             setLoading(false);
         }
