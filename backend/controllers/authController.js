@@ -118,7 +118,7 @@ export const getNearbyUsers = async (req, res) => {
             {
                 _id: { $ne: userId },
                 location: { $ne: null },
-                blockedUsers: { $nin: [userId] },
+                // blockedUsers: { $nin: [userId] },
             },
             'location _id username isOnline'
         );

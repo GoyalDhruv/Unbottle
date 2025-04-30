@@ -1,6 +1,7 @@
 import crypto from 'crypto-js';
 import Message from '../models/MessageModel.js';
 import Chat from '../models/ChatModel.js';
+import User from '../models/UserModel.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -67,6 +68,42 @@ export const getMessagesForChat = async (req, res) => {
         if (!isUserInChat) {
             return res.status(403).json({ message: 'You are not a participant in this chat' });
         }
+
+        const getUsers = await Chat.findOne({ _id: chatId }).populate('participants', 'username _id');
+        // check is the user blocked or not 
+        const [userId1, userId2] = getUsers?.participants?.map(p => p._id.toString());
+
+        const [user1, user2] = await Promise.all([
+            User.findById(userId1),
+            User.findById(userId2)
+        ]);
+
+        let blockedDetails = {
+            blocked: false,
+            blockedBy: null,
+            blockedUser: null,
+            blockedByUsername: null,
+        };
+
+        if (user1?.blockedUsers?.includes(userId2)) {
+            blockedDetails = {
+                blocked: true,
+                blockedBy: userId1,
+                blockedUser: userId2,
+                blockedByUsername: user1.username,
+            };
+        }
+        else if (user2?.blockedUsers?.includes(userId1)) {
+            blockedDetails = {
+                blocked: true,
+                blockedBy: userId2,
+                blockedUser: userId1,
+                blockedByUsername: user2.username,
+            };
+        }
+
+        console.log(blockedDetails);
+
         const messages = await Message.find({ chat: chatId })
             .populate('sender', 'username _id')
             .sort({ createdAt: 1 });
@@ -76,7 +113,10 @@ export const getMessagesForChat = async (req, res) => {
             return { ...message.toObject(), content: decryptedContent };
         });
 
-        res.status(200).json({ message: 'Messages fetched successfully', messages: decryptedMessages });
+        res.status(200).json({
+            message: 'Messages fetched successfully',
+            messages: { users: getUsers, decryptedMessages, blockedDetails }
+        });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch messages', error });
     }

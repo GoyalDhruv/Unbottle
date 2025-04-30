@@ -1,8 +1,11 @@
 import React, { useState } from 'react'
 import { sendMessage } from '../../services/messageService';
 import { Button } from '@chakra-ui/react';
+import { Send } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 
-function SendMessage({ id, setMessages }) {
+function SendMessage({ setMessages }) {
+    const { id } = useParams();
 
     const [newMessage, setNewMessage] = useState('');
 
@@ -37,9 +40,10 @@ function SendMessage({ id, setMessages }) {
                 />
                 <Button
                     type="submit"
-                    className="bg-gradient-to-r from-[#6d67ff] to-[#f16186] text-white !rounded-lg"
+                    size="sm"
+                    className="!bg-transparent"
                 >
-                    Send
+                    <Send size={18} className='text-white' />
                 </Button>
             </div>
         </form>

@@ -56,7 +56,7 @@ const Chats = () => {
                                         <p className="font-semibold text-lg">{otherUser?.username || "User"}</p>
                                         <p className="text-sm text-gray-500 truncate max-w-[200px]">
                                             {chat?.lastMessage
-                                                ? `${lastMessageSenderIsCurrentUser ? "You: " : `${otherUser?.username || "User"}: "}`}${chat.lastMessage.content}`
+                                                ? `${lastMessageSenderIsCurrentUser ? "You: " : `${otherUser?.username || "User"}: `}${chat.lastMessage.content}`
                                                 : "No messages yet."}
                                         </p>
                                     </div>
