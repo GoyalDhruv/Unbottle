@@ -5,6 +5,7 @@ import { User2Icon, MapPinIcon } from 'lucide-react';
 import ChatLoader from '../../components/Loader/ChatLoader';
 import { createChat } from '../../services/chatService';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const FindUsers = () => {
     const { locationCoordinates } = useLocationGranted();
@@ -53,7 +54,10 @@ const FindUsers = () => {
             const response = await createChat(data);
             navigate(`/app/chat/${response?.chat?._id}`)
         } catch (error) {
-            console.error(error)
+            // console.error(error)
+            if (error?.response?.status === 403) {
+                toast.error(error?.response?.data?.message);
+            }
         }
     };
 

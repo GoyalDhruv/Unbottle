@@ -62,3 +62,25 @@ export const getAllNearUsers = async () => {
         throw error;
     }
 }
+
+export const blockUser = async (id) => {
+    try {
+        const response = await api.post(`${USER_API_END_POINT}/block/${id}`);
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error in blocking user:', error);
+        throw error;
+    }
+}
+
+export const unblockUser = async (id) => {
+    try {
+        const response = await api.post(`${USER_API_END_POINT}/unblock/${id}`);
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error in unblocking user:', error);
+        throw error;
+    }
+}
