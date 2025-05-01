@@ -37,8 +37,6 @@ function ChatById() {
         messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    console.log(blockedData?.blockedUser === currentUser._id, blockedData?.blockedUser, currentUser)
-
     return (
         <div className="flex flex-col h-full text-white">
             {

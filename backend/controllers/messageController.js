@@ -102,8 +102,6 @@ export const getMessagesForChat = async (req, res) => {
             };
         }
 
-        console.log(blockedDetails);
-
         const messages = await Message.find({ chat: chatId })
             .populate('sender', 'username _id')
             .sort({ createdAt: 1 });
