@@ -168,3 +168,14 @@ export const updateUserLocation = async (req, res) => {
         res.status(500).json({ message: 'Error updating location' });
     }
 };
+
+export const logoutUser = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        await User.findByIdAndUpdate(userId, { token: null });
+        res.status(200).json({ message: 'User logged out successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error logging out user' });
+    }
+};

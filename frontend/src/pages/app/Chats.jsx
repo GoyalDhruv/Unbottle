@@ -5,6 +5,7 @@ import { User2Icon } from "lucide-react";
 import { formatDateHeading, formatTime } from '../../utils/helper';
 import { getDataFromLocalStorage } from '../../utils/helper';
 import ChatLoader from "../../components/Loader/ChatLoader";
+import SectionContainer from "../../container/SectionContainer";
 
 const Chats = () => {
     const [chats, setChats] = useState([]);
@@ -29,21 +30,20 @@ const Chats = () => {
     }, []);
 
     return (
-        <div className="flex flex-col items-center justify-start h-full text-white px-4 py-8">
-            <div className="text-3xl font-bold pb-3 bg-gradient-to-r from-[#6d67ff] to-[#f16186] bg-clip-text text-transparent">
-                Chats
-            </div>
-            <p className="text-sm !mb-6">Your recent conversations will appear here.</p>
-
+        <SectionContainer
+            heading="Chats"
+            subheading="Your recent conversations will appear here."
+        >
             {loading ? (
                 <ChatLoader />
             ) : chats.length === 0 ? (
                 <p className="text-gray-400">No chats found.</p>
             ) : (
                 <ul className="w-full max-w-xl space-y-4 text-[#7970a5]">
-                    {chats?.map((chat) => {
+                    {chats.map((chat) => {
                         const otherUser = chat?.participants?.find((p) => p?._id !== currentUserId);
                         const lastMessageSenderIsCurrentUser = chat?.lastMessage?.sender === currentUserId;
+
                         return (
                             <li
                                 key={chat?._id}
@@ -53,11 +53,11 @@ const Chats = () => {
                                 <div className="flex items-center space-x-4">
                                     <User2Icon className="w-8 h-8" />
                                     <div>
-                                        <p className="font-semibold text-lg">{otherUser?.username || "User"}</p>
+                                        <p className="font-semibold text-lg">{otherUser?.username || 'User'}</p>
                                         <p className="text-sm text-gray-500 truncate max-w-[200px]">
                                             {chat?.lastMessage
-                                                ? `${lastMessageSenderIsCurrentUser ? "You: " : `${otherUser?.username || "User"}: `}${chat.lastMessage.content}`
-                                                : "No messages yet."}
+                                                ? `${lastMessageSenderIsCurrentUser ? 'You: ' : `${otherUser?.username || 'User'}: `}${chat.lastMessage.content}`
+                                                : 'No messages yet.'}
                                         </p>
                                     </div>
                                 </div>
@@ -69,7 +69,7 @@ const Chats = () => {
                     })}
                 </ul>
             )}
-        </div>
+        </SectionContainer>
     );
 };
 

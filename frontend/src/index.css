@@ -16,3 +16,12 @@
 .chat-messages-container::-webkit-scrollbar {
     display: none;
 }
+
+.home-container {
+    height: calc(100vh - 180px);
+    overflow-y: auto;
+}
+
+.home-container::-webkit-scrollbar {
+    display: none;
+}

@@ -41,7 +41,7 @@ function RegisterForm() {
             }
 
             const response = await registerUser(data);
-            localStorage.setItem('unbottle', JSON.stringify(response));
+
             login(JSON.stringify(response));
 
             navigate('/app/chats')

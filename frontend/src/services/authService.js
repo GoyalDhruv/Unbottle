@@ -84,3 +84,14 @@ export const unblockUser = async (id) => {
         throw error;
     }
 }
+
+export const logoutUser = async () => {
+    try {
+        const response = await api.post(`${USER_API_END_POINT}/logout`);
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error in logging out user:', error);
+        throw error;
+    }
+}

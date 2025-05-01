@@ -6,6 +6,7 @@ import ChatLoader from '../../components/Loader/ChatLoader';
 import { createChat } from '../../services/chatService';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import SectionContainer from '../../container/SectionContainer';
 
 const FindUsers = () => {
     const { locationCoordinates } = useLocationGranted();
@@ -62,12 +63,10 @@ const FindUsers = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-start h-full text-white px-4 py-8">
-            <div className="text-3xl font-bold pb-3 bg-gradient-to-r from-[#6d67ff] to-[#f16186] bg-clip-text text-transparent">
-                Nearby Users
-            </div>
-            <p className="text-sm !mb-6">Connect with people around you</p>
-
+        <SectionContainer
+            heading="Nearby Users"
+            subheading="Connect with people around you"
+        >
             {loading ? (
                 <ChatLoader />
             ) : error ? (
@@ -99,7 +98,7 @@ const FindUsers = () => {
                     ))}
                 </ul>
             )}
-        </div>
+        </SectionContainer>
     );
 };
 

@@ -1,30 +1,34 @@
 import React, { useState } from 'react'
-import { sendMessage } from '../../services/messageService';
 import { Button } from '@chakra-ui/react';
 import { Send } from 'lucide-react';
 import { useParams } from 'react-router-dom';
+import { useSocket } from '../../context/SocketContext';
+import { getDataFromLocalStorage } from '../../utils/helper';
 
-function SendMessage({ setMessages }) {
+function SendMessage() {
     const { id } = useParams();
 
     const [newMessage, setNewMessage] = useState('');
+    const { current: socket } = useSocket();
 
-    const handleSendMessage = async (event) => {
+    const currentUser = getDataFromLocalStorage();
+
+    const handleSendMessage = (event) => {
         event.preventDefault();
 
         if (!newMessage.trim()) return;
 
-        try {
-            const payload = {
-                chatId: id,
-                content: newMessage,
-            };
-            const res = await sendMessage(payload);
-            setMessages((prev) => [...prev, res?.message]);
-            setNewMessage('');
-        } catch (error) {
-            console.error('Message send failed:', error);
+        const msg = {
+            chatId: id,
+            senderId: currentUser._id,
+            content: newMessage,
+        };
+
+        if (socket) {
+            socket.emit('send_message', msg);
         }
+
+        setNewMessage('');
     };
 
     return (

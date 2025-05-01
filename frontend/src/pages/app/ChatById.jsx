@@ -5,6 +5,7 @@ import { formatTime, getDataFromLocalStorage, formatDateHeading } from '../../ut
 import SendMessage from '../../components/Form/SendMessage';
 import ChatLoader from '../../components/Loader/ChatLoader';
 import ChatHeader from '../../components/Chat/ChatHeader';
+import { useSocket } from '../../context/SocketContext';
 
 function ChatById() {
     const { id } = useParams();
@@ -13,8 +14,26 @@ function ChatById() {
     const [users, setUsers] = useState([])
     const messageEndRef = useRef(null);
     const [loading, setLoading] = useState(true);
+    const { current: socket } = useSocket();
 
     const currentUser = getDataFromLocalStorage();
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleIncomingMessage = (msg) => {
+            setMessages((prev) => ({
+                ...prev,
+                decryptedMessages: [...prev.decryptedMessages, msg],
+            }));
+        };
+
+        socket.on("message_received", handleIncomingMessage);
+
+        return () => {
+            socket.off("message_received", handleIncomingMessage);
+        };
+    }, [socket]);
 
     const getChatById = async () => {
         try {
@@ -36,8 +55,6 @@ function ChatById() {
     useEffect(() => {
         messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
-
-    console.log(blockedData?.blockedUser === currentUser._id, blockedData?.blockedUser, currentUser)
 
     return (
         <div className="flex flex-col h-full text-white">
@@ -90,7 +107,6 @@ function ChatById() {
                             </div>
                         </div>
 
-
                         <div className="p-3 border-t border-gray-600 max-w-[500px] mx-auto fixed bottom-14 left-0 right-0 !rounded-lg text-center">
                             {blockedData?.blocked === true ?
                                 <span className="bg-[#e4e4e7] text-black px-4 py-2 rounded-xl">
@@ -98,7 +114,7 @@ function ChatById() {
                                 </span> :
                                 // Input Box
                                 <div className='bg-[#726fbb] p-3 rounded-xl'>
-                                    <SendMessage setMessages={setMessages} />
+                                    <SendMessage />
                                 </div>
                             }
                         </div>

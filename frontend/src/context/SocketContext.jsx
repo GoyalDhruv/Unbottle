@@ -17,7 +17,7 @@ export const SocketProvider = ({ children }) => {
                 },
             });
 
-            socket.current.on("connect", () => {
+            socket.current.on("connection", () => {
                 console.log("✅ Connected to socket:", socket.current.id);
             });
 
@@ -32,7 +32,7 @@ export const SocketProvider = ({ children }) => {
     }, []);
 
     return (
-        <SocketContext.Provider value={socket.current}>
+        <SocketContext.Provider value={socket}>
             {children}
         </SocketContext.Provider>
     );

@@ -36,9 +36,8 @@ function LoginForm() {
             }
 
             const response = await loginUser(data);
-            localStorage.setItem('unbottle', JSON.stringify(response));
-
             login(JSON.stringify(response));
+
             navigate('/app/chats');
             setSubmitted(false);
             setCredentials({ username: '', password: '' });

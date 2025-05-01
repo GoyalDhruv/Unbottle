@@ -3,6 +3,8 @@ import User from '../models/UserModel.js';
 import crypto from 'crypto-js';
 import MessageModel from '../models/MessageModel.js';
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const userSocketMap = new Map();
 
@@ -13,10 +15,13 @@ const socketHandler = (io) => {
     io.use((socket, next) => {
         try {
             const token = socket.handshake.auth.token;
+
             if (!token) return next(new Error('Authentication error'));
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            socket.userId = decoded._id;
+
+            socket.userId = decoded.id;
+
             next();
         } catch (error) {
             console.error('Socket auth failed:', error);
@@ -58,17 +63,13 @@ const socketHandler = (io) => {
                 const populatedMessage = await MessageModel.findById(newMessage._id)
                     .populate('sender', '_id username');
 
+                const decryptedContent = crypto.AES.decrypt(populatedMessage.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
+                populatedMessage.content = decryptedContent;
+
                 // Emit to all participants except sender
                 chat.participants.forEach((user) => {
                     const userIdStr = user._id.toString();
                     const socketId = getSocketIdByUserId(userIdStr);
-
-                    if (userIdStr === senderId) {
-                        if (socketId) {
-                            io.to(socketId).emit('message_sent', populatedMessage);
-                        }
-                        return;
-                    }
 
                     if (socketId) {
                         io.to(socketId).emit('message_received', populatedMessage);

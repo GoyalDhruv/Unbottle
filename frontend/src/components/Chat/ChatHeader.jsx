@@ -44,7 +44,7 @@ function ChatHeader({ users, blockedData, getChatById }) {
                         variant='outline'
                         className='!text-[#726fbb] !bg-[#f8f8ff]'
                     />
-                    <MenuList className="!p-0 !rounded-xl" align="end">
+                    <MenuList className="!p-0 !rounded-xl !w-[120px]" align="end">
                         <MenuItem
                             className="hover:!bg-[#726fbb] !py-3 !rounded-xl !text-end !bg-[#f8f8ff] !text-[#726fbb] hover:!text-white"
                             onClick={() => handleClick(blockedData?.blocked ? 'Unblock' : 'Block')}
