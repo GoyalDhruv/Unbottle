@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { getDataFromLocalStorage } from "../utils/helper";
+import { useAuth } from "./AuthContext";
 
 const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
     const socket = useRef(null);
+    const { isAuthenticated } = useAuth();
 
     useEffect(() => {
         const token = getDataFromLocalStorage()?.token;
@@ -29,7 +31,7 @@ export const SocketProvider = ({ children }) => {
                 socket.current.disconnect();
             };
         }
-    }, []);
+    }, [isAuthenticated]);
 
     return (
         <SocketContext.Provider value={socket}>

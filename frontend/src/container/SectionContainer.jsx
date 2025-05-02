@@ -1,24 +1,30 @@
 import { LogOut } from 'lucide-react';
 import React from 'react';
 import { logoutUser } from '../services/authService';
-// import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 
 const SectionContainer = ({ heading, subheading, children }) => {
 
     const { logout } = useAuth();
+    const { current: socket } = useSocket();
 
     const onLogout = async () => {
         try {
 
+            if (socket?.current) {
+                socket?.current?.disconnect();
+            }
+
             await logoutUser();
-            // toast.success('Logout successful!');
+
             logout();
 
         } catch (error) {
             console.error(error);
         }
     }
+
     return (
         <div className="flex flex-col items-center justify-start h-full text-white">
             <div className="sticky top-0 z-10 text-center w-full px-6">

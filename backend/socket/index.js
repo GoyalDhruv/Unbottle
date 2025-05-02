@@ -8,8 +8,6 @@ dotenv.config();
 
 const userSocketMap = new Map();
 
-const getSocketIdByUserId = (userId) => userSocketMap.get(userId);
-
 const socketHandler = (io) => {
     // Middleware to authenticate socket
     io.use((socket, next) => {
@@ -19,7 +17,6 @@ const socketHandler = (io) => {
             if (!token) return next(new Error('Authentication error'));
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
             socket.userId = decoded.id;
 
             next();
@@ -36,9 +33,27 @@ const socketHandler = (io) => {
         // Register socket
         userSocketMap.set(userId, socket.id);
         await User.findByIdAndUpdate(userId, { isOnline: true, socketId: socket.id });
+
+        console.log('Online users:', [...userSocketMap.keys()]);
+
         socket.broadcast.emit('user_online', userId);
 
-        // Send Message Event
+        // Join Chat Room
+        socket.on('join_chat', (chatId) => {
+            socket.join(chatId);
+            console.log(`✅ User ${userId} joined chat room ${chatId}`);
+        });
+
+        // Typing Events
+        socket.on('typing', ({ chatId }) => {
+            socket.to(chatId).emit('typing', { userId });
+        });
+
+        socket.on('stop_typing', ({ chatId }) => {
+            socket.to(chatId).emit('stop_typing', { userId });
+        });
+
+        // Send Message Event (Using Room)
         socket.on('send_message', async (newChat) => {
             try {
                 const { chatId, senderId, content } = newChat;
@@ -66,17 +81,8 @@ const socketHandler = (io) => {
                 const decryptedContent = crypto.AES.decrypt(populatedMessage.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
                 populatedMessage.content = decryptedContent;
 
-                // Emit to all participants except sender
-                chat.participants.forEach((user) => {
-                    const userIdStr = user._id.toString();
-                    const socketId = getSocketIdByUserId(userIdStr);
-
-                    if (socketId) {
-                        io.to(socketId).emit('message_received', populatedMessage);
-                    } else {
-                        console.log(`⚠️ Socket ID not found for user ${userIdStr}`);
-                    }
-                });
+                // Emit to all users in this chat room
+                io.to(chatId).emit('message_received', populatedMessage);
 
             } catch (error) {
                 console.error('❌ Error in send_message event:', error);
@@ -99,7 +105,7 @@ const socketHandler = (io) => {
             }
         });
 
-        // Logging all events
+        // Log all socket events
         socket.onAny((event, ...args) => {
             console.log(`📡 Event received: ${event}`, args);
         });
@@ -107,3 +113,4 @@ const socketHandler = (io) => {
 };
 
 export default socketHandler;
+

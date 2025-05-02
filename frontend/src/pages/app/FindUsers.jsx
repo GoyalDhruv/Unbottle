@@ -7,6 +7,7 @@ import { createChat } from '../../services/chatService';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import SectionContainer from '../../container/SectionContainer';
+import { useSocket } from '../../context/SocketContext';
 
 const FindUsers = () => {
     const { locationCoordinates } = useLocationGranted();
@@ -14,6 +15,7 @@ const FindUsers = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const socket = useSocket();
 
     const updateLocation = async () => {
         try {
@@ -45,7 +47,36 @@ const FindUsers = () => {
             updateLocation();
             getNearbyUsers();
         }
+
     }, [locationCoordinates]);
+
+    useEffect(() => {
+        if (!socket?.current) return;
+
+        const handleUserOnline = (userId) => {
+            setNearbyUsers((prev) =>
+                prev.map((user) =>
+                    user._id === userId ? { ...user, isOnline: true } : user
+                )
+            );
+        };
+
+        const handleUserOffline = (userId) => {
+            setNearbyUsers((prev) =>
+                prev.map((user) =>
+                    user._id === userId ? { ...user, isOnline: false } : user
+                )
+            );
+        };
+
+        socket.current.on('user_online', handleUserOnline);
+        socket.current.on('user_offline', handleUserOffline);
+
+        return () => {
+            socket.current?.off('user_online', handleUserOnline);
+            socket.current?.off('user_offline', handleUserOffline);
+        };
+    }, [socket]);
 
     const handleChat = async (user) => {
         try {

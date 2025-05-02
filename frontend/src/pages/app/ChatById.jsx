@@ -15,8 +15,15 @@ function ChatById() {
     const messageEndRef = useRef(null);
     const [loading, setLoading] = useState(true);
     const { current: socket } = useSocket();
+    const [typingUsers, setTypingUsers] = useState([]);
 
     const currentUser = getDataFromLocalStorage();
+
+    useEffect(() => {
+        if (socket && id) {
+            socket.emit("join_chat", id);
+        }
+    }, [socket, id]);
 
     useEffect(() => {
         if (!socket) return;
@@ -34,6 +41,29 @@ function ChatById() {
             socket.off("message_received", handleIncomingMessage);
         };
     }, [socket]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleTyping = ({ userId }) => {
+            if (userId !== currentUser._id) {
+                setTypingUsers((prev) => [...new Set([...prev, userId])]);
+            }
+        };
+
+        const handleStopTyping = ({ userId }) => {
+            setTypingUsers((prev) => prev.filter((id) => id !== userId));
+        };
+
+        socket.on("typing", handleTyping);
+        socket.on("stop_typing", handleStopTyping);
+
+        return () => {
+            socket.off("typing", handleTyping);
+            socket.off("stop_typing", handleStopTyping);
+        };
+    }, [socket]);
+
 
     const getChatById = async () => {
         try {
@@ -69,7 +99,7 @@ function ChatById() {
                         <div className='chat-messages-container'>
                             <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2 pb-16">
                                 {messages?.decryptedMessages?.length === 0 ? (
-                                    <p className="text-[#726fbb] text-center fixed top-[350px] left-[400px]">No messages yet.</p>
+                                    <p className="text-[#726fbb] text-center !pt-60">No messages yet.</p>
                                 ) : (
                                     messages?.decryptedMessages?.map((msg, index) => {
                                         const currentMessageDate = new Date(msg?.createdAt).toDateString();
@@ -113,9 +143,18 @@ function ChatById() {
                                     {blockedData?.blockedUser === currentUser._id ? `You have been blocked` : `You have blocked ${users?.participants?.find(item => item?.username !== blockedData?.blockedByUsername)?.username}`}
                                 </span> :
                                 // Input Box
-                                <div className='bg-[#726fbb] p-3 rounded-xl'>
-                                    <SendMessage />
-                                </div>
+                                <>
+                                    <div ref={messageEndRef} />
+                                    {typingUsers.length > 0 && (
+                                        <p className="text-sm text-[#726fbb]  italic">
+                                            {users?.participants?.find((u) => typingUsers.includes(u._id) && u._id !== currentUser._id)?.username} is typing...
+                                        </p>
+                                    )}
+
+                                    <div className='bg-[#726fbb] p-3 rounded-xl'>
+                                        <SendMessage />
+                                    </div>
+                                </>
                             }
                         </div>
                     </>
