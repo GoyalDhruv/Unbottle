@@ -17,7 +17,6 @@ function ChatById() {
     const { current: socket } = useSocket();
     const [typingUsers, setTypingUsers] = useState([]);
 
-
     const currentUser = getDataFromLocalStorage();
 
     useEffect(() => {
@@ -100,7 +99,7 @@ function ChatById() {
                         <div className='chat-messages-container'>
                             <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2 pb-16">
                                 {messages?.decryptedMessages?.length === 0 ? (
-                                    <p className="text-[#726fbb] text-center fixed top-[350px] left-[700px]">No messages yet.</p>
+                                    <p className="text-[#726fbb] text-center !pt-60">No messages yet.</p>
                                 ) : (
                                     messages?.decryptedMessages?.map((msg, index) => {
                                         const currentMessageDate = new Date(msg?.createdAt).toDateString();

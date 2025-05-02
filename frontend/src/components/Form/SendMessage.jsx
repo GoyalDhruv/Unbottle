@@ -20,7 +20,7 @@ function SendMessage() {
 
         const timeout = setTimeout(() => {
             socket.emit('stop_typing', { chatId: id, userId: currentUser._id });
-        }, 2000); // 2 seconds after last keystroke
+        }, 2000);
 
         setTypingTimeout(timeout);
     };
@@ -36,7 +36,7 @@ function SendMessage() {
         };
 
         socket?.emit('send_message', msg);
-        socket?.emit('stop_typing', { chatId: id, userId: currentUser._id }); // stop typing on send
+        socket?.emit('stop_typing', { chatId: id, userId: currentUser._id });
         setNewMessage('');
     };
 
