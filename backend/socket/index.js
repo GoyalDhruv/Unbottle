@@ -36,6 +36,7 @@ const socketHandler = (io) => {
         // Register socket
         userSocketMap.set(userId, socket.id);
         await User.findByIdAndUpdate(userId, { isOnline: true, socketId: socket.id });
+        console.log('Online users:', [...userSocketMap.keys()]);
         socket.broadcast.emit('user_online', userId);
 
         // Send Message Event
