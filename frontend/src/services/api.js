@@ -35,6 +35,12 @@ api.interceptors.response.use(
                 toast.error("Unauthorized User");
             }
         }
+        if ((error.response && error.response.status === 403) || (error.response && error.response.status === 500 && error.response.data.error.name === 'CastError')) {
+            toast.error(error.response.data.message);
+            setTimeout(() => {
+                window.location.replace('/app/chats');
+            }, 2000);
+        }
         return Promise.reject(error);
     }
 );

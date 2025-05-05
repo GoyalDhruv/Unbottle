@@ -37,7 +37,7 @@ const Chats = () => {
             {loading ? (
                 <ChatLoader />
             ) : chats.length === 0 ? (
-                <p className="text-gray-400">No chats found.</p>
+                <p className="text-[#726fbb] text-center !pt-60">No chats found.</p>
             ) : (
                 <ul className="w-full max-w-xl space-y-4 text-[#7970a5]">
                     {chats.map((chat) => {
@@ -48,7 +48,7 @@ const Chats = () => {
                             <li
                                 key={chat?._id}
                                 onClick={() => navigate(`/app/chat/${chat._id}`)}
-                                className="bg-[#fafaff] hover:bg-[#f0efff] p-4 rounded-xl shadow-lg flex items-center justify-between cursor-pointer"
+                                className="bg-[#fafaff] hover:bg-[#f0efff] p-4 rounded-xl shadow-lg flex items-end justify-between cursor-pointer"
                             >
                                 <div className="flex items-center space-x-4">
                                     <User2Icon className="w-8 h-8" />
@@ -57,12 +57,12 @@ const Chats = () => {
                                         <p className="text-sm text-gray-500 truncate max-w-[200px]">
                                             {chat?.lastMessage
                                                 ? `${lastMessageSenderIsCurrentUser ? 'You: ' : `${otherUser?.username || 'User'}: `}${chat.lastMessage.content}`
-                                                : 'No messages yet.'}
+                                                : 'No Active Conversation.'}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center text-sm text-gray-500 space-x-1">
-                                    <span>{formatDateHeading(chat?.updatedAt)} {formatTime(chat?.updatedAt)}</span>
+                                <div className="text-gray-500">
+                                    <span className="text-xs">{formatDateHeading(chat?.updatedAt)=== 'Today' ? '' : formatDateHeading(chat?.updatedAt)} {formatTime(chat?.updatedAt)}</span>
                                 </div>
                             </li>
                         );

@@ -103,7 +103,7 @@ const FindUsers = () => {
             ) : error ? (
                 <p className="text-red-500">{error}</p>
             ) : nearbyUsers.length === 0 ? (
-                <p className="text-gray-400">No nearby users found.</p>
+                <p className="text-[#726fbb] text-center !pt-60">No nearby users found.</p>
             ) : (
                 <ul className="w-full max-w-xl space-y-4 text-[#7970a5]">
                     {nearbyUsers?.map((user) => (

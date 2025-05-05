@@ -13,6 +13,7 @@ function ChatById() {
     const [blockedData, setBlockedData] = useState([]);
     const [users, setUsers] = useState([])
     const messageEndRef = useRef(null);
+    const messagesContainerRef = useRef(null);
     const [loading, setLoading] = useState(true);
     const { current: socket } = useSocket();
     const [typingUsers, setTypingUsers] = useState([]);
@@ -64,7 +65,6 @@ function ChatById() {
         };
     }, [socket]);
 
-
     const getChatById = async () => {
         try {
             const res = await getMessageById(id);
@@ -82,9 +82,21 @@ function ChatById() {
         getChatById();
     }, [id]);
 
+    // Scroll to bottom whenever messages change
     useEffect(() => {
-        messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        scrollToBottom();
     }, [messages]);
+
+    const scrollToBottom = () => {
+        messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // Also scroll to bottom when component first mounts
+    useEffect(() => {
+        if (!loading) {
+            scrollToBottom();
+        }
+    }, [loading]);
 
     return (
         <div className="flex flex-col h-full text-white">
@@ -96,10 +108,10 @@ function ChatById() {
                         <ChatHeader users={users} blockedData={blockedData} getChatById={getChatById} />
 
                         {/* Message Container */}
-                        <div className='chat-messages-container'>
+                        <div className='chat-messages-container' ref={messagesContainerRef}>
                             <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2 pb-16">
                                 {messages?.decryptedMessages?.length === 0 ? (
-                                    <p className="text-[#726fbb] text-center !pt-60">No messages yet.</p>
+                                    <p className="text-[#726fbb] text-center !pt-60">No Active Conversation.</p>
                                 ) : (
                                     messages?.decryptedMessages?.map((msg, index) => {
                                         const currentMessageDate = new Date(msg?.createdAt).toDateString();
@@ -144,9 +156,8 @@ function ChatById() {
                                 </span> :
                                 // Input Box
                                 <>
-                                    <div ref={messageEndRef} />
                                     {typingUsers.length > 0 && (
-                                        <p className="text-sm text-[#726fbb]  italic">
+                                        <p className="text-sm text-[#726fbb] italic">
                                             {users?.participants?.find((u) => typingUsers.includes(u._id) && u._id !== currentUser._id)?.username} is typing...
                                         </p>
                                     )}
