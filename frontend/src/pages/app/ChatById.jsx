@@ -6,6 +6,7 @@ import SendMessage from '../../components/Form/SendMessage';
 import ChatLoader from '../../components/Loader/ChatLoader';
 import ChatHeader from '../../components/Chat/ChatHeader';
 import { useSocket } from '../../context/SocketContext';
+import { MessageStatus } from '../../components/Chat/MessageStatus';
 
 function ChatById() {
     const { id } = useParams();
@@ -29,6 +30,37 @@ function ChatById() {
     useEffect(() => {
         if (!socket) return;
 
+
+        const handleUserOnline = (userId) => {
+            setUsers((prev) => ({
+                ...prev,
+                participants: prev?.participants?.map((user) =>
+                    user._id === userId ? { ...user, isOnline: true } : user
+                ),
+            }));
+        };
+
+        const handleUserOffline = (userId) => {
+            setUsers((prev) => ({
+                ...prev,
+                participants: prev?.participants?.map((user) =>
+                    user._id === userId ? { ...user, isOnline: false } : user
+                ),
+            }));
+        };
+
+        socket.on('user_online', handleUserOnline);
+        socket.on('user_offline', handleUserOffline);
+
+        return () => {
+            socket?.off('user_online', handleUserOnline);
+            socket?.off('user_offline', handleUserOffline);
+        };
+    }, [socket]);
+
+    useEffect(() => {
+        if (!socket) return;
+
         const handleIncomingMessage = (msg) => {
             setMessages((prev) => ({
                 ...prev,
@@ -42,6 +74,35 @@ function ChatById() {
             socket.off("message_received", handleIncomingMessage);
         };
     }, [socket]);
+
+    useEffect(() => {
+        if (!socket || !messages?.decryptedMessages) return;
+
+        const unseenMessages = messages.decryptedMessages.filter(
+            (msg) => msg?.sender?._id !== currentUser._id && !msg.isSeen
+        );
+
+        const unseenMessageIds = unseenMessages.map((msg) => msg._id);
+
+        if (unseenMessageIds.length > 0) {
+            socket.emit('messages_seen', {
+                messageIds: unseenMessageIds,
+                chatId: id,
+            });
+        }
+
+        const handleCheckUpdateMsg = (msg) => {
+            setMessages((prev) => ({
+                ...prev,
+                decryptedMessages: prev.decryptedMessages.map((message) =>
+                    msg.find((newMessage) => newMessage._id === message._id) || message
+                ),
+            }));
+        }
+
+        socket.on("messages_seen_update", handleCheckUpdateMsg)
+    }, [messages, socket, id, currentUser._id]);
+
 
     useEffect(() => {
         if (!socket) return;
@@ -82,7 +143,6 @@ function ChatById() {
         getChatById();
     }, [id]);
 
-    // Scroll to bottom whenever messages change
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
@@ -91,12 +151,15 @@ function ChatById() {
         messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    // Also scroll to bottom when component first mounts
     useEffect(() => {
         if (!loading) {
             scrollToBottom();
         }
     }, [loading]);
+
+    const getReceiverOnlineStatus = () => {
+        return users?.participants?.find(p => p._id !== currentUser._id)?.isOnline;
+    };
 
     return (
         <div className="flex flex-col h-full text-white">
@@ -135,10 +198,16 @@ function ChatById() {
                                                             : 'bg-[#f8f8ff] text-black'
                                                             }`}
                                                     >
-                                                        <p className="text-sm">{msg?.content}</p>
-                                                        <p className="text-[10px] text-right mt-1 opacity-70">
-                                                            {formatTime(msg?.createdAt)}
-                                                        </p>
+                                                        <p className="text-sm break-words">{msg?.content}</p>
+                                                        <div className="flex items-center justify-end space-x-1 text-[10px] text-right mt-1 opacity-70">
+                                                            <span>{formatTime(msg?.createdAt)}</span>
+                                                            {msg?.sender._id === currentUser._id && (
+                                                                <MessageStatus
+                                                                    isSeen={msg?.isSeen}
+                                                                    isOnline={getReceiverOnlineStatus()}
+                                                                />
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </React.Fragment>

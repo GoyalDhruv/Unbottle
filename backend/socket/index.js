@@ -53,6 +53,39 @@ const socketHandler = (io) => {
             socket.to(chatId).emit('stop_typing', { userId });
         });
 
+        socket.on('messages_seen', async ({ messageIds = [], chatId }) => {
+            try {
+                if (messageIds.length === 0) return;
+
+                const userId = socket.userId;
+
+                // Only update messages that were sent by someone else
+                await MessageModel.updateMany(
+                    {
+                        _id: { $in: messageIds },
+                        sender: { $ne: userId }, // Not sent by current user
+                    },
+                    { $set: { isSeen: true } }
+                );
+
+                // Fetch updated messages to emit
+                const updatedMessages = await MessageModel.find({
+                    _id: { $in: messageIds },
+                    sender: { $ne: userId }
+                }).populate('sender', '_id username');
+
+                const decryptedMessages = updatedMessages.map((message) => ({
+                    ...message.toObject(),
+                    content: crypto.AES.decrypt(message.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8),
+                }));
+
+                io.to(chatId).emit('messages_seen_update', decryptedMessages);
+
+            } catch (error) {
+                console.error('❌ Error in messages_seen event:', error);
+            }
+        });
+
         // Send Message Event (Using Room)
         socket.on('send_message', async (newChat) => {
             try {

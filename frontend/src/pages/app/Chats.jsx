@@ -6,12 +6,14 @@ import { formatDateHeading, formatTime } from '../../utils/helper';
 import { getDataFromLocalStorage } from '../../utils/helper';
 import ChatLoader from "../../components/Loader/ChatLoader";
 import SectionContainer from "../../container/SectionContainer";
+import { Badge } from "@chakra-ui/react";
+import { useSocket } from "../../context/SocketContext";
 
 const Chats = () => {
     const [chats, setChats] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-
+    const socket = useSocket().current; // Access the socket from context
     const currentUserId = getDataFromLocalStorage()?._id;
 
     const getAllChats = async () => {
@@ -28,6 +30,76 @@ const Chats = () => {
     useEffect(() => {
         getAllChats();
     }, []);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        // Handle new messages
+        const handleNewMessage = (newMessage) => {
+            setChats(prevChats => {
+                // Update the chat that received the message
+                const updatedChats = prevChats.map(chat => {
+                    if (chat._id === newMessage.chat) {
+                        const isCurrentUserSender = newMessage.sender._id === currentUserId;
+                        const unSeenCount = !isCurrentUserSender
+                            ? (chat.unSeenCount || 0) + 1
+                            : chat.unSeenCount || 0;
+
+                        return {
+                            ...chat,
+                            lastMessage: newMessage,
+                            unSeenCount,
+                            updatedAt: new Date() // Update timestamp for sorting
+                        };
+                    }
+                    return chat;
+                });
+
+                // Bring the updated chat to the top
+                return [
+                    updatedChats.find(chat => chat._id === newMessage.chat),
+                    ...updatedChats.filter(chat => chat._id !== newMessage.chat)
+                ].filter(Boolean);
+            });
+        };
+
+        // Handle when messages are marked as seen
+        const handleMessagesSeen = (seenMessages) => {
+            if (!seenMessages.length) return;
+
+            const chatId = seenMessages[0].chat;
+            setChats(prevChats =>
+                prevChats.map(chat =>
+                    chat._id === chatId
+                        ? { ...chat, unSeenCount: 0 }
+                        : chat
+                )
+            );
+        };
+
+        // Join all chat rooms when component mounts
+        const joinChatRooms = () => {
+            if (chats.length > 0) {
+                chats.forEach(chat => {
+                    socket.emit('join_chat', chat._id);
+                });
+            }
+        };
+
+        // Set up event listeners
+        socket.on('message_received', handleNewMessage);
+        socket.on('messages_seen_update', handleMessagesSeen);
+
+        // Join chat rooms after a slight delay to ensure socket is ready
+        const joinTimeout = setTimeout(joinChatRooms, 500);
+
+        return () => {
+            // Clean up event listeners
+            socket.off('message_received', handleNewMessage);
+            socket.off('messages_seen_update', handleMessagesSeen);
+            clearTimeout(joinTimeout);
+        };
+    }, [socket, chats, currentUserId]);
 
     return (
         <SectionContainer
@@ -48,21 +120,33 @@ const Chats = () => {
                             <li
                                 key={chat?._id}
                                 onClick={() => navigate(`/app/chat/${chat._id}`)}
-                                className="bg-[#fafaff] hover:bg-[#f0efff] p-4 rounded-xl shadow-lg flex items-end justify-between cursor-pointer"
+                                className="bg-[#fafaff] hover:bg-[#f0efff] p-4 rounded-xl shadow-lg flex items-center justify-between cursor-pointer"
                             >
                                 <div className="flex items-center space-x-4">
                                     <User2Icon className="w-8 h-8" />
                                     <div>
                                         <p className="font-semibold text-lg">{otherUser?.username || 'User'}</p>
-                                        <p className="text-sm text-gray-500 truncate max-w-[200px]">
+                                        <p className={`text-sm text-gray-500 truncate max-w-[200px] ${chat?.unSeenCount > 0 ? 'font-bold ' : ''}`}>
                                             {chat?.lastMessage
                                                 ? `${lastMessageSenderIsCurrentUser ? 'You: ' : `${otherUser?.username || 'User'}: `}${chat.lastMessage.content}`
                                                 : 'No Active Conversation.'}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="text-gray-500">
-                                    <span className="text-xs">{formatDateHeading(chat?.updatedAt)=== 'Today' ? '' : formatDateHeading(chat?.updatedAt)} {formatTime(chat?.updatedAt)}</span>
+                                <div className="text-gray-500 flex-column items-center">
+                                    <div className="text-xs">
+                                        {formatDateHeading(chat?.updatedAt) === 'Today' ? '' : formatDateHeading(chat?.updatedAt)} {formatDateHeading(chat?.updatedAt) === 'Today' ? formatTime(chat?.updatedAt) : ''}
+                                    </div>
+                                    <div className="text-end">
+                                        <Badge
+                                            colorScheme="red"
+                                            className={`!p-2 !py-1 !rounded-full !text-xs ${chat?.unSeenCount > 0 ? "" : "!invisible"}`}
+                                        >
+                                            {chat?.unSeenCount > 0 && (
+                                                chat.unSeenCount
+                                            )}
+                                        </Badge>
+                                    </div>
                                 </div>
                             </li>
                         );
