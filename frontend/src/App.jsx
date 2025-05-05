@@ -12,6 +12,7 @@ const ChatsPage = React.lazy(() => import('./pages/app/Chats'))
 const FindUsersPage = React.lazy(() => import('./pages/app/FindUsers'))
 const CallsPage = React.lazy(() => import('./pages/app/Calls'))
 const ChatByIdPage = React.lazy(() => import('./pages/app/ChatById'))
+const PageNotFound = React.lazy(() => import('./pages/PageNotFound'))
 
 function App() {
 
@@ -32,6 +33,7 @@ function App() {
               <Route path="chat/:id" element={<ChatByIdPage />} />
             </Route>
           </Route>
+          <Route path="*" element={<PageNotFound />} />
         </Routes>
       </Suspense>
     </div>

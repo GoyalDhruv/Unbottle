@@ -1,6 +1,7 @@
 import crypto from 'crypto-js';
 import Chat from '../models/ChatModel.js';
 import User from '../models/UserModel.js';
+import Message from '../models/MessageModel.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -49,18 +50,41 @@ export const getUserChats = async (req, res) => {
             .populate('lastMessage')
             .sort({ updatedAt: -1 });
 
+        // Count unread messages for each chat (fixing async issue)
+        const unSeenMsg = await Promise.all(
+            chats.map(async (chat) => {
+                const countIsSeen = await Message.countDocuments({
+                    chat: chat?._id,
+                    isSeen: false,
+                    sender: { $ne: req.user.id },
+                });
+
+                // Return count and chat id (or any other data you want to include)
+                return { chatId: chat._id, unSeenCount: countIsSeen };
+            })
+        );
+
+        // Decrypt last message content
         const decryptedContent = chats.map((chat) => {
             if (chat?.lastMessage?.content) {
-                const newContent = crypto.AES.decrypt(chat.lastMessage.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8)
+                const newContent = crypto.AES.decrypt(chat.lastMessage.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
                 return { ...chat.toObject(), lastMessage: { ...chat.lastMessage.toObject(), content: newContent } };
             } else {
                 return { ...chat.toObject(), lastMessage: null };
             }
         });
 
-        if (chats?.length === 0) return res.status(404).json({ message: 'No chats found' });
+        // Combine chats with unread message count
+        const result = decryptedContent.map((chat) => {
+            const unSeen = unSeenMsg.find((item) => item.chatId.toString() === chat._id.toString());
+            return { ...chat, unSeenCount: unSeen ? unSeen.unSeenCount : 0 };
+        });
 
-        res.status(200).json({ message: 'Chats fetched successfully', chats: decryptedContent });
+        if (chats?.length === 0) {
+            return res.status(404).json({ message: 'No chats found' });
+        }
+
+        res.status(200).json({ message: 'Chats fetched successfully', chats: result });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch chats', error });
     }

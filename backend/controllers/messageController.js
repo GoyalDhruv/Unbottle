@@ -69,7 +69,7 @@ export const getMessagesForChat = async (req, res) => {
             return res.status(403).json({ message: 'You are not a participant in this chat' });
         }
 
-        const getUsers = await Chat.findOne({ _id: chatId }).populate('participants', 'username _id');
+        const getUsers = await Chat.findOne({ _id: chatId }).populate('participants', 'username _id isOnline');
         // check is the user blocked or not 
         const [userId1, userId2] = getUsers?.participants?.map(p => p._id.toString());
 

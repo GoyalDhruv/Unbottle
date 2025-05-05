@@ -6,6 +6,7 @@ import SendMessage from '../../components/Form/SendMessage';
 import ChatLoader from '../../components/Loader/ChatLoader';
 import ChatHeader from '../../components/Chat/ChatHeader';
 import { useSocket } from '../../context/SocketContext';
+import { MessageStatus } from '../../components/Chat/MessageStatus';
 
 function ChatById() {
     const { id } = useParams();
@@ -13,6 +14,7 @@ function ChatById() {
     const [blockedData, setBlockedData] = useState([]);
     const [users, setUsers] = useState([])
     const messageEndRef = useRef(null);
+    const messagesContainerRef = useRef(null);
     const [loading, setLoading] = useState(true);
     const { current: socket } = useSocket();
     const [typingUsers, setTypingUsers] = useState([]);
@@ -24,6 +26,37 @@ function ChatById() {
             socket.emit("join_chat", id);
         }
     }, [socket, id]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+
+        const handleUserOnline = (userId) => {
+            setUsers((prev) => ({
+                ...prev,
+                participants: prev?.participants?.map((user) =>
+                    user._id === userId ? { ...user, isOnline: true } : user
+                ),
+            }));
+        };
+
+        const handleUserOffline = (userId) => {
+            setUsers((prev) => ({
+                ...prev,
+                participants: prev?.participants?.map((user) =>
+                    user._id === userId ? { ...user, isOnline: false } : user
+                ),
+            }));
+        };
+
+        socket.on('user_online', handleUserOnline);
+        socket.on('user_offline', handleUserOffline);
+
+        return () => {
+            socket?.off('user_online', handleUserOnline);
+            socket?.off('user_offline', handleUserOffline);
+        };
+    }, [socket]);
 
     useEffect(() => {
         if (!socket) return;
@@ -41,6 +74,35 @@ function ChatById() {
             socket.off("message_received", handleIncomingMessage);
         };
     }, [socket]);
+
+    useEffect(() => {
+        if (!socket || !messages?.decryptedMessages) return;
+
+        const unseenMessages = messages.decryptedMessages.filter(
+            (msg) => msg?.sender?._id !== currentUser._id && !msg.isSeen
+        );
+
+        const unseenMessageIds = unseenMessages.map((msg) => msg._id);
+
+        if (unseenMessageIds.length > 0) {
+            socket.emit('messages_seen', {
+                messageIds: unseenMessageIds,
+                chatId: id,
+            });
+        }
+
+        const handleCheckUpdateMsg = (msg) => {
+            setMessages((prev) => ({
+                ...prev,
+                decryptedMessages: prev.decryptedMessages.map((message) =>
+                    msg.find((newMessage) => newMessage._id === message._id) || message
+                ),
+            }));
+        }
+
+        socket.on("messages_seen_update", handleCheckUpdateMsg)
+    }, [messages, socket, id, currentUser._id]);
+
 
     useEffect(() => {
         if (!socket) return;
@@ -64,7 +126,6 @@ function ChatById() {
         };
     }, [socket]);
 
-
     const getChatById = async () => {
         try {
             const res = await getMessageById(id);
@@ -83,8 +144,22 @@ function ChatById() {
     }, [id]);
 
     useEffect(() => {
-        messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        scrollToBottom();
     }, [messages]);
+
+    const scrollToBottom = () => {
+        messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    useEffect(() => {
+        if (!loading) {
+            scrollToBottom();
+        }
+    }, [loading]);
+
+    const getReceiverOnlineStatus = () => {
+        return users?.participants?.find(p => p._id !== currentUser._id)?.isOnline;
+    };
 
     return (
         <div className="flex flex-col h-full text-white">
@@ -96,10 +171,10 @@ function ChatById() {
                         <ChatHeader users={users} blockedData={blockedData} getChatById={getChatById} />
 
                         {/* Message Container */}
-                        <div className='chat-messages-container'>
+                        <div className='chat-messages-container' ref={messagesContainerRef}>
                             <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2 pb-16">
                                 {messages?.decryptedMessages?.length === 0 ? (
-                                    <p className="text-[#726fbb] text-center !pt-60">No messages yet.</p>
+                                    <p className="text-[#726fbb] text-center !pt-60">No Active Conversation.</p>
                                 ) : (
                                     messages?.decryptedMessages?.map((msg, index) => {
                                         const currentMessageDate = new Date(msg?.createdAt).toDateString();
@@ -123,10 +198,16 @@ function ChatById() {
                                                             : 'bg-[#f8f8ff] text-black'
                                                             }`}
                                                     >
-                                                        <p className="text-sm">{msg?.content}</p>
-                                                        <p className="text-[10px] text-right mt-1 opacity-70">
-                                                            {formatTime(msg?.createdAt)}
-                                                        </p>
+                                                        <p className="text-sm break-words">{msg?.content}</p>
+                                                        <div className="flex items-center justify-end space-x-1 text-[10px] text-right mt-1 opacity-70">
+                                                            <span>{formatTime(msg?.createdAt)}</span>
+                                                            {msg?.sender._id === currentUser._id && (
+                                                                <MessageStatus
+                                                                    isSeen={msg?.isSeen}
+                                                                    isOnline={getReceiverOnlineStatus()}
+                                                                />
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </React.Fragment>
@@ -144,9 +225,8 @@ function ChatById() {
                                 </span> :
                                 // Input Box
                                 <>
-                                    <div ref={messageEndRef} />
                                     {typingUsers.length > 0 && (
-                                        <p className="text-sm text-[#726fbb]  italic">
+                                        <p className="text-sm text-[#726fbb] italic">
                                             {users?.participants?.find((u) => typingUsers.includes(u._id) && u._id !== currentUser._id)?.username} is typing...
                                         </p>
                                     )}
