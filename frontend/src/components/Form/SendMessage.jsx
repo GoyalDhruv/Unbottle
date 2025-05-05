@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@chakra-ui/react';
 import { Send } from 'lucide-react';
 import { useParams } from 'react-router-dom';
@@ -20,7 +20,7 @@ function SendMessage() {
 
         const timeout = setTimeout(() => {
             socket.emit('stop_typing', { chatId: id, userId: currentUser._id });
-        }, 2000);
+        }, 1000);
 
         setTypingTimeout(timeout);
     };
@@ -49,7 +49,8 @@ function SendMessage() {
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => {
                         handleTyping();
-                        if (e.key === 'Enter') handleSendMessage(e);
+                        if (e.key === 'Enter')
+                            handleSendMessage(e);
                     }}
                     placeholder="Type your message..."
                     className="flex-1 p-2 !ps-5 rounded-md !text-white placeholder:!text-white !border-none outline-none"

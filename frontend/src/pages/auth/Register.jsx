@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Text } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';

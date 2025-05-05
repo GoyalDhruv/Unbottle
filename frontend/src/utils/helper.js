@@ -26,3 +26,7 @@ export const formatDateHeading = (dateStr) => {
 
     return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 };
+
+export const getParticipant = (users,currentUser) => {
+    return users?.participants?.find(item => item?._id !== currentUser?._id)
+}

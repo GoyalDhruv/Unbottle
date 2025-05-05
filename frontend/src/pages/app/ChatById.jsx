@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { getMessageById } from '../../services/messageService';
-import { formatTime, getDataFromLocalStorage, formatDateHeading } from '../../utils/helper';
+import { formatTime, getDataFromLocalStorage, formatDateHeading, getParticipant } from '../../utils/helper';
 import SendMessage from '../../components/Form/SendMessage';
 import ChatLoader from '../../components/Loader/ChatLoader';
 import ChatHeader from '../../components/Chat/ChatHeader';
@@ -29,7 +29,6 @@ function ChatById() {
 
     useEffect(() => {
         if (!socket) return;
-
 
         const handleUserOnline = (userId) => {
             setUsers((prev) => ({
@@ -157,10 +156,6 @@ function ChatById() {
         }
     }, [loading]);
 
-    const getReceiverOnlineStatus = () => {
-        return users?.participants?.find(p => p._id !== currentUser._id)?.isOnline;
-    };
-
     return (
         <div className="flex flex-col h-full text-white">
             {
@@ -204,7 +199,7 @@ function ChatById() {
                                                             {msg?.sender._id === currentUser._id && (
                                                                 <MessageStatus
                                                                     isSeen={msg?.isSeen}
-                                                                    isOnline={getReceiverOnlineStatus()}
+                                                                    isOnline={getParticipant(users, currentUser)?.isOnline}
                                                                 />
                                                             )}
                                                         </div>

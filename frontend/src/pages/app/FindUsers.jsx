@@ -15,7 +15,7 @@ const FindUsers = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const navigate = useNavigate();
-    const socket = useSocket();
+    const { current: socket } = useSocket();
 
     const updateLocation = async () => {
         try {
@@ -47,11 +47,10 @@ const FindUsers = () => {
             updateLocation();
             getNearbyUsers();
         }
-
     }, [locationCoordinates]);
 
     useEffect(() => {
-        if (!socket?.current) return;
+        if (!socket) return;
 
         const handleUserOnline = (userId) => {
             setNearbyUsers((prev) =>
@@ -69,12 +68,12 @@ const FindUsers = () => {
             );
         };
 
-        socket.current.on('user_online', handleUserOnline);
-        socket.current.on('user_offline', handleUserOffline);
+        socket.on('user_online', handleUserOnline);
+        socket.on('user_offline', handleUserOffline);
 
         return () => {
-            socket.current?.off('user_online', handleUserOnline);
-            socket.current?.off('user_offline', handleUserOffline);
+            socket?.off('user_online', handleUserOnline);
+            socket?.off('user_offline', handleUserOffline);
         };
     }, [socket]);
 
@@ -86,7 +85,6 @@ const FindUsers = () => {
             const response = await createChat(data);
             navigate(`/app/chat/${response?.chat?._id}`)
         } catch (error) {
-            // console.error(error)
             if (error?.response?.status === 403) {
                 toast.error(error?.response?.data?.message);
             }

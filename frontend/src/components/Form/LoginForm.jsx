@@ -16,7 +16,6 @@ function LoginForm() {
 
     const { locationCoordinates, locationGranted } = useLocationGranted();
 
-
     const handleLogin = async (e) => {
         e.preventDefault();
         setSubmitted(true);

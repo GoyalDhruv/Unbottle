@@ -3,6 +3,7 @@ import React from 'react';
 import { logoutUser } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
+import toast from 'react-hot-toast';
 
 const SectionContainer = ({ heading, subheading, children }) => {
 
@@ -11,16 +12,14 @@ const SectionContainer = ({ heading, subheading, children }) => {
 
     const onLogout = async () => {
         try {
+            if (!socket) return;
 
-            if (socket?.current) {
-                socket?.current?.disconnect();
-            }
-
+            socket?.disconnect();
             await logoutUser();
-
             logout();
 
         } catch (error) {
+            toast.error(error?.response?.data?.message);
             console.error(error);
         }
     }
@@ -40,12 +39,16 @@ const SectionContainer = ({ heading, subheading, children }) => {
                     {/* Heading and Subheading */}
                     <div className="text-3xl font-bold pb-3 bg-gradient-to-r from-[#6d67ff] to-[#f16186] bg-clip-text text-transparent">
                         {heading}
-                        <p className="text-sm mt-2">{subheading}</p>
+                        <p className="text-sm mt-2">
+                            {subheading}
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <div className="home-container w-[420px]">{children}</div>
+            <div className="home-container w-[420px]">
+                {children}
+            </div>
         </div>
     );
 };

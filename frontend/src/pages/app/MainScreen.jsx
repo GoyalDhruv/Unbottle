@@ -22,5 +22,5 @@ const MainScreen = () => {
         </Box>
     );
 };
-//   fbfbff
+
 export default MainScreen;

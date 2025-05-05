@@ -17,11 +17,10 @@ const BottomNav = () => {
             className="max-w-[500px] mx-auto fixed bottom-0 left-0 right-0 bg-white shadow-lg flex justify-around py-2"
             borderTopRadius="xl"
         >
-            {navItems.map((item, idx) => (
+            {navItems.map((item, id) => (
                 <IconButton
-                    key={idx}
+                    key={id}
                     icon={item.icon}
-                    aria-label={`Go to ${item.path}`}
                     onClick={() => navigate(item.path)}
                     variant="ghost"
                     colorScheme={location.pathname === item.path ? 'purple' : 'gray'}
