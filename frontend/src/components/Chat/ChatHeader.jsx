@@ -30,7 +30,6 @@ function ChatHeader({ users, blockedData, getChatById }) {
 
             {/* back button */}
             <button
-                className="absolute left-4 top-1/2 transform -translate-y-1/2"
                 onClick={() => window.history.back()}
             >
                 <ArrowBackIcon className="!w-6 !h-6 !text-[#726fbb]" />

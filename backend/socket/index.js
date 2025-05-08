@@ -86,24 +86,48 @@ const socketHandler = (io) => {
             }
         });
 
-        // Send Message Event (Using Room)
         socket.on('send_message', async (newChat) => {
             try {
-                const { chatId, senderId, content } = newChat;
-                console.log('📨 send message event:', { chatId, senderId, content });
+                const { chatId, senderId, content, media = [], type } = newChat;
+                console.log('📨 send message event:', { chatId, senderId, content, media, type });
 
-                const chat = await ChatModel.findById(chatId).populate('participants', '_id username');
+                const chat = await ChatModel.findById(chatId).populate('participants', '_id username blockedUsers');
                 if (!chat) return console.log('⚠️ Chat not found');
 
                 const isParticipant = chat.participants.some(p => p._id.toString() === senderId);
                 if (!isParticipant) return console.log('🚫 Sender is not in this chat');
 
-                const encryptedContent = crypto.AES.encrypt(content, process.env.MSG_SECRET).toString();
+                const receiver = chat.participants.find(p => p._id.toString() !== senderId);
+                const senderUser = chat.participants.find(p => p._id.toString() === senderId);
+
+                if (
+                    senderUser.blockedUsers.includes(receiver._id) ||
+                    receiver.blockedUsers.includes(senderId)
+                ) {
+                    return console.log('🚫 Message blocked due to block status');
+                }
+
+                let encryptedContent = '';
+                let encryptedMedia = [];
+
+                if (type === 'text') {
+                    encryptedContent = crypto.AES.encrypt(content, process.env.MSG_SECRET).toString();
+                } else if (type === 'media') {
+                    encryptedMedia = media.map(({ url, type, caption }) => ({
+                        url,
+                        type,
+                        caption: caption
+                            ? crypto.AES.encrypt(caption, process.env.MSG_SECRET).toString()
+                            : '',
+                    }));
+                }
 
                 const newMessage = await MessageModel.create({
                     sender: senderId,
                     chat: chatId,
                     content: encryptedContent,
+                    media: encryptedMedia,
+                    type,
                 });
 
                 await ChatModel.findByIdAndUpdate(chatId, { lastMessage: newMessage._id });
@@ -111,10 +135,21 @@ const socketHandler = (io) => {
                 const populatedMessage = await MessageModel.findById(newMessage._id)
                     .populate('sender', '_id username');
 
-                const decryptedContent = crypto.AES.decrypt(populatedMessage.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
-                populatedMessage.content = decryptedContent;
+                if (populatedMessage.type === 'text') {
+                    populatedMessage.content = crypto.AES.decrypt(
+                        populatedMessage.content,
+                        process.env.MSG_SECRET
+                    ).toString(crypto.enc.Utf8);
+                } else if (populatedMessage.type === 'media') {
+                    populatedMessage.media = populatedMessage.media.map(({ url, type, caption }) => ({
+                        url,
+                        type,
+                        caption: caption
+                            ? crypto.AES.decrypt(caption, process.env.MSG_SECRET).toString(crypto.enc.Utf8)
+                            : '',
+                    }));
+                }
 
-                // Emit to all users in this chat room
                 io.to(chatId).emit('message_received', populatedMessage);
 
             } catch (error) {
