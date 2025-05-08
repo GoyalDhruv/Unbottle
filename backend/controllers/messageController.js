@@ -5,13 +5,12 @@ import User from '../models/UserModel.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
-
 export const sendMessage = async (req, res) => {
-    const { chatId, content } = req.body;
+    const { chatId, content, media = [], type } = req.body;
     const sender = req.user.id;
 
-    if (!chatId || !content) {
-        return res.status(400).json({ message: 'Chat ID and content are required' });
+    if (!chatId || !type || (type === 'text' && !content) || (type === 'media' && media.length === 0)) {
+        return res.status(400).json({ message: 'Invalid payload: missing required fields.' });
     }
 
     const isUserInChat = await Chat.findOne({ _id: chatId, participants: { $in: [sender] } });
@@ -21,16 +20,9 @@ export const sendMessage = async (req, res) => {
 
     try {
         const chat = await Chat.findById(chatId).populate('participants', '_id blockedUsers');
-        if (!chat || !chat.participants.some(p => p._id.toString() === sender)) {
-            return res.status(403).json({ message: 'You are not a participant in this chat' });
-        }
-
         const receiver = chat.participants.find(p => p._id.toString() !== sender);
-        if (!receiver) {
-            return res.status(400).json({ message: 'Could not identify recipient in chat' });
-        }
-
         const senderUser = chat.participants.find(p => p._id.toString() === sender);
+
         if (
             senderUser.blockedUsers.includes(receiver._id) ||
             receiver.blockedUsers.includes(sender)
@@ -38,24 +30,53 @@ export const sendMessage = async (req, res) => {
             return res.status(403).json({ message: 'You cannot send messages to this user' });
         }
 
-        const encryptedContent = crypto.AES.encrypt(content, process.env.MSG_SECRET).toString();
+        let encryptedContent = '';
+        if (type === 'text') {
+            encryptedContent = crypto.AES.encrypt(content, process.env.MSG_SECRET).toString();
+        }
+
+        let encryptedMedia = [];
+        if (type === 'media') {
+            encryptedMedia = media.map(({ url, type, caption }) => ({
+                url,
+                type,
+                caption: caption
+                    ? crypto.AES.encrypt(caption, process.env.MSG_SECRET).toString()
+                    : '',
+            }));
+        }
 
         const message = await Message.create({
             sender,
             chat: chatId,
             content: encryptedContent,
+            media: encryptedMedia,
+            type,
         });
 
         await Chat.findByIdAndUpdate(chatId, { lastMessage: message._id });
 
-        const populatedMessage = await Message.findById(message._id)
-            .populate('sender', 'username _id');
+        const populatedMessage = await Message.findById(message._id).populate('sender', 'username _id');
 
-        const decryptedContent = crypto.AES.decrypt(message.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
-        populatedMessage.content = decryptedContent;
+        if (populatedMessage.type === 'text') {
+            populatedMessage.content = crypto.AES.decrypt(
+                populatedMessage.content,
+                process.env.MSG_SECRET
+            ).toString(crypto.enc.Utf8);
+        } else if (populatedMessage.type === 'media') {
+            populatedMessage.media = populatedMessage.media.map(({ url, type, caption }) => ({
+                url,
+                type,
+                caption: caption
+                    ? crypto.AES.decrypt(caption, process.env.MSG_SECRET).toString(crypto.enc.Utf8)
+                    : '',
+            }));
+        }
 
         res.status(201).json({ message: 'Message sent successfully', message: populatedMessage });
+
     } catch (error) {
+        console.error('Send message error:', error);
         res.status(500).json({ message: 'Failed to send message', error });
     }
 };
@@ -106,10 +127,28 @@ export const getMessagesForChat = async (req, res) => {
             .populate('sender', 'username _id')
             .sort({ createdAt: 1 });
 
+        // console.log()
         const decryptedMessages = messages.map((message) => {
-            const decryptedContent = crypto.AES.decrypt(message.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
-            return { ...message.toObject(), content: decryptedContent };
-        });
+            if (message.type === 'text') {
+                const decryptedContent = crypto.AES.decrypt(message.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
+                return { ...message.toObject(), content: decryptedContent };
+            }
+            else if (message?.type === 'media') {
+                const decryptedMedia = message.media.map(({ url, type, caption }) => ({
+                    url,
+                    type,
+                    caption: caption
+                        ? crypto.AES.decrypt(caption, process.env.MSG_SECRET).toString(crypto.enc.Utf8)
+                        : '',
+                }));
+                return { ...message.toObject(), media: decryptedMedia };
+            }
+        })
+
+        // const decryptedMessages = messages.map((message) => {
+        //     const decryptedContent = crypto.AES.decrypt(message.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
+        //     return { ...message.toObject(), content: decryptedContent };
+        // });
 
         res.status(200).json({
             message: 'Messages fetched successfully',

@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { getMessageById } from '../../services/messageService';
-import { formatTime, getDataFromLocalStorage, formatDateHeading } from '../../utils/helper';
+import { getDataFromLocalStorage } from '../../utils/helper';
 import SendMessage from '../../components/Form/SendMessage';
 import ChatLoader from '../../components/Loader/ChatLoader';
 import ChatHeader from '../../components/Chat/ChatHeader';
 import { useSocket } from '../../context/SocketContext';
-import { MessageStatus } from '../../components/Chat/MessageStatus';
+import MessageContainer from '../../components/Chat/MessageContainer';
 
 function ChatById() {
     const { id } = useParams();
@@ -14,7 +14,6 @@ function ChatById() {
     const [blockedData, setBlockedData] = useState([]);
     const [users, setUsers] = useState([])
     const messageEndRef = useRef(null);
-    const messagesContainerRef = useRef(null);
     const [loading, setLoading] = useState(true);
     const { current: socket } = useSocket();
     const [typingUsers, setTypingUsers] = useState([]);
@@ -29,7 +28,6 @@ function ChatById() {
 
     useEffect(() => {
         if (!socket) return;
-
 
         const handleUserOnline = (userId) => {
             setUsers((prev) => ({
@@ -101,6 +99,11 @@ function ChatById() {
         }
 
         socket.on("messages_seen_update", handleCheckUpdateMsg)
+
+        return () => {
+            socket.off("messages_seen_update", handleCheckUpdateMsg);
+        };
+
     }, [messages, socket, id, currentUser._id]);
 
 
@@ -157,10 +160,6 @@ function ChatById() {
         }
     }, [loading]);
 
-    const getReceiverOnlineStatus = () => {
-        return users?.participants?.find(p => p._id !== currentUser._id)?.isOnline;
-    };
-
     return (
         <div className="flex flex-col h-full text-white">
             {
@@ -171,59 +170,13 @@ function ChatById() {
                         <ChatHeader users={users} blockedData={blockedData} getChatById={getChatById} />
 
                         {/* Message Container */}
-                        <div className='chat-messages-container' ref={messagesContainerRef}>
-                            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2 pb-16">
-                                {messages?.decryptedMessages?.length === 0 ? (
-                                    <p className="text-[#726fbb] text-center !pt-60">No Active Conversation.</p>
-                                ) : (
-                                    messages?.decryptedMessages?.map((msg, index) => {
-                                        const currentMessageDate = new Date(msg?.createdAt).toDateString();
-                                        const previousMessageDate =
-                                            index > 0 ? new Date(messages?.decryptedMessages?.[index - 1]?.createdAt).toDateString() : null;
-                                        const showDateHeader = currentMessageDate !== previousMessageDate;
-
-                                        return (
-                                            <React.Fragment key={msg._id}>
-                                                {showDateHeader && (
-                                                    <div className="text-center text-xs text-gray-400 my-4">
-                                                        {formatDateHeading(msg?.createdAt)}
-                                                    </div>
-                                                )}
-                                                <div
-                                                    className={`flex ${msg?.sender._id === currentUser._id ? 'justify-end' : 'justify-start'}`}
-                                                >
-                                                    <div
-                                                        className={`max-w-xs md:max-w-md px-4 py-2 rounded-xl shadow ${msg?.sender._id === currentUser._id
-                                                            ? 'bg-[#726fbb] text-white'
-                                                            : 'bg-[#f8f8ff] text-black'
-                                                            }`}
-                                                    >
-                                                        <p className="text-sm break-words">{msg?.content}</p>
-                                                        <div className="flex items-center justify-end space-x-1 text-[10px] text-right mt-1 opacity-70">
-                                                            <span>{formatTime(msg?.createdAt)}</span>
-                                                            {msg?.sender._id === currentUser._id && (
-                                                                <MessageStatus
-                                                                    isSeen={msg?.isSeen}
-                                                                    isOnline={getReceiverOnlineStatus()}
-                                                                />
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </React.Fragment>
-                                        );
-                                    })
-                                )}
-                                <div ref={messageEndRef} />
-                            </div>
-                        </div>
+                        <MessageContainer messageEndRef={messageEndRef} messages={messages} users={users} />
 
                         <div className="p-3 border-t border-gray-600 max-w-[500px] mx-auto fixed bottom-14 left-0 right-0 !rounded-lg text-center">
                             {blockedData?.blocked === true ?
                                 <span className="bg-[#e4e4e7] text-black px-4 py-2 rounded-xl">
                                     {blockedData?.blockedUser === currentUser._id ? `You have been blocked` : `You have blocked ${users?.participants?.find(item => item?.username !== blockedData?.blockedByUsername)?.username}`}
                                 </span> :
-                                // Input Box
                                 <>
                                     {typingUsers.length > 0 && (
                                         <p className="text-sm text-[#726fbb] italic">

@@ -14,7 +14,6 @@ function RegisterForm() {
     const navigate = useNavigate()
     const { login } = useAuth();
 
-
     const { locationGranted, locationCoordinates } = useLocationGranted();
 
     const handleRegister = async (e) => {

@@ -8,7 +8,6 @@ export default function HomePage() {
 
     const { isAuthenticated } = useAuth();
 
-
     return (
         <div className="min-h-screen flex flex-col items-center justify-between bg-gradient-to-bl from-[#e5e0ff] to-[#f7f4ff] p-6">
             {/* Top Heading */}

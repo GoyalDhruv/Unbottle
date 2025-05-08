@@ -1,5 +1,5 @@
 import React from 'react'
-import { getDataFromLocalStorage } from '../../utils/helper';
+import { getDataFromLocalStorage, getParticipant } from '../../utils/helper';
 import { IconButton, Menu, MenuButton, MenuItem, MenuList } from '@chakra-ui/react';
 import { ArrowBackIcon, HamburgerIcon } from '@chakra-ui/icons';
 import { blockUser, unblockUser } from '../../services/authService';
@@ -10,14 +10,16 @@ function ChatHeader({ users, blockedData, getChatById }) {
 
     const handleClick = async (action) => {
         try {
-            const userId = users?.participants?.find(item => item?._id !== currentUser?._id)?._id;
+            const participantId = getParticipant(users, currentUser)?._id;
 
             if (action === 'Block') {
-                await blockUser(userId);
+                await blockUser(participantId);
             } else if (action === 'Unblock') {
-                await unblockUser(userId);
+                await unblockUser(participantId);
             }
+
             getChatById();
+
         } catch (error) {
             console.error(error);
         }
@@ -25,16 +27,19 @@ function ChatHeader({ users, blockedData, getChatById }) {
 
     return (
         <div className="sticky top-0 z-10 !mb-1 flex justify-between items-center">
+
             {/* back button */}
             <button
-                className="absolute left-4 top-1/2 transform -translate-y-1/2"
                 onClick={() => window.history.back()}
             >
                 <ArrowBackIcon className="!w-6 !h-6 !text-[#726fbb]" />
             </button>
+
+            {/* username */}
             <div className="text-3xl font-bold bg-gradient-to-r from-[#6d67ff] to-[#f16186] bg-clip-text text-transparent text-center flex-1">
-                {users?.participants?.find(item => item?._id !== currentUser?._id)?.username}
+                {getParticipant(users, currentUser)?.username}
             </div>
+
             {/* menu button */}
             {(blockedData?.blockedBy === currentUser._id || !blockedData?.blocked) &&
                 <Menu placement="bottom-end">

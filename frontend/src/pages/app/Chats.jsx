@@ -13,7 +13,7 @@ const Chats = () => {
     const [chats, setChats] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-    const socket = useSocket().current; // Access the socket from context
+    const { current: socket } = useSocket();
     const currentUserId = getDataFromLocalStorage()?._id;
 
     const getAllChats = async () => {
@@ -34,10 +34,8 @@ const Chats = () => {
     useEffect(() => {
         if (!socket) return;
 
-        // Handle new messages
         const handleNewMessage = (newMessage) => {
             setChats(prevChats => {
-                // Update the chat that received the message
                 const updatedChats = prevChats.map(chat => {
                     if (chat._id === newMessage.chat) {
                         const isCurrentUserSender = newMessage.sender._id === currentUserId;
@@ -49,13 +47,12 @@ const Chats = () => {
                             ...chat,
                             lastMessage: newMessage,
                             unSeenCount,
-                            updatedAt: new Date() // Update timestamp for sorting
+                            updatedAt: new Date()
                         };
                     }
                     return chat;
                 });
 
-                // Bring the updated chat to the top
                 return [
                     updatedChats.find(chat => chat._id === newMessage.chat),
                     ...updatedChats.filter(chat => chat._id !== newMessage.chat)
@@ -63,7 +60,6 @@ const Chats = () => {
             });
         };
 
-        // Handle when messages are marked as seen
         const handleMessagesSeen = (seenMessages) => {
             if (!seenMessages.length) return;
 
@@ -77,7 +73,6 @@ const Chats = () => {
             );
         };
 
-        // Join all chat rooms when component mounts
         const joinChatRooms = () => {
             if (chats.length > 0) {
                 chats.forEach(chat => {
@@ -86,15 +81,12 @@ const Chats = () => {
             }
         };
 
-        // Set up event listeners
         socket.on('message_received', handleNewMessage);
         socket.on('messages_seen_update', handleMessagesSeen);
 
-        // Join chat rooms after a slight delay to ensure socket is ready
         const joinTimeout = setTimeout(joinChatRooms, 500);
 
         return () => {
-            // Clean up event listeners
             socket.off('message_received', handleNewMessage);
             socket.off('messages_seen_update', handleMessagesSeen);
             clearTimeout(joinTimeout);
