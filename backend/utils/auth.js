@@ -7,6 +7,10 @@ export const generateToken = (userId) => {
     });
 };
 
+export const verifyToken = (token) => {
+    return jwt.verify(token, process.env.JWT_SECRET);
+}
+
 export const hashPassword = async (password) => {
     const salt = await bcrypt.genSalt(10);
     return await bcrypt.hash(password, salt);

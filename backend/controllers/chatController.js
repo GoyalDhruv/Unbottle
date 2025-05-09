@@ -1,9 +1,7 @@
-import crypto from 'crypto-js';
 import Chat from '../models/ChatModel.js';
 import User from '../models/UserModel.js';
 import Message from '../models/MessageModel.js';
-import dotenv from 'dotenv';
-dotenv.config();
+import { decryptMsg } from '../utils/cryptoUtils.js';
 
 export const accessOrCreateChat = async (req, res) => {
     const { userId } = req.body;
@@ -41,6 +39,8 @@ export const accessOrCreateChat = async (req, res) => {
     }
 };
 
+// fix this api for last message
+
 export const getUserChats = async (req, res) => {
     try {
         const chats = await Chat.find({
@@ -66,10 +66,19 @@ export const getUserChats = async (req, res) => {
 
         // Decrypt last message content
         const decryptedContent = chats.map((chat) => {
-            if (chat?.lastMessage?.content) {
-                const newContent = crypto.AES.decrypt(chat.lastMessage.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
-                return { ...chat.toObject(), lastMessage: { ...chat.lastMessage.toObject(), content: newContent } };
-            } else {
+
+            if (chat?.lastMessage?.type === 'text') {
+                return { ...chat.toObject(), lastMessage: { ...chat.lastMessage.toObject(), content: decryptMsg(chat.lastMessage.content) } };
+            }
+            else if (chat?.lastMessage?.type === 'media') {
+                return {
+                    ...chat.toObject(),
+                    lastMessage: {
+                        ...chat.lastMessage.toObject(), content: chat?.lastMessage?.media[chat?.lastMessage?.media?.length - 1]?.type === 'image' ? "Image" : "Video"
+                    }
+                }
+            }
+            else {
                 return { ...chat.toObject(), lastMessage: null };
             }
         });

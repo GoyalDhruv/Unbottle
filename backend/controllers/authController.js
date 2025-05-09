@@ -1,4 +1,4 @@
-import { getDistanceFromLatLonInKm } from '../helper.js';
+import { getDistanceFromLatLonInKm } from '../utils/helper.js';
 import User from '../models/UserModel.js';
 import { hashPassword, matchPassword, generateToken } from '../utils/auth.js';
 
