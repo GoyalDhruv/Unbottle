@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button, IconButton, Menu, MenuButton, MenuItem, MenuList, useDisclosure } from '@chakra-ui/react';
-import { Eye, Image as ImageIcon, Send, X } from 'lucide-react';
+import { Image as ImageIcon, Send } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext';
 import { getDataFromLocalStorage } from '../../utils/helper';
 import { AttachmentIcon } from '@chakra-ui/icons';
 import toast from 'react-hot-toast';
-import MediaPreviewModal from '../MediaPreview/MediaPreviewModal';
+import MediaPreviewModal from '../Modal/MediaPreviewModal';
 
 function SendMessage() {
     const { id } = useParams();

@@ -1,10 +1,8 @@
 import ChatModel from '../models/ChatModel.js';
 import User from '../models/UserModel.js';
-import crypto from 'crypto-js';
 import MessageModel from '../models/MessageModel.js';
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
-dotenv.config();
+import { decryptMsg, encryptMsg } from '../utils/cryptoUtils.js';
+import { verifyToken } from '../utils/auth.js';
 
 const userSocketMap = new Map();
 
@@ -16,7 +14,7 @@ const socketHandler = (io) => {
 
             if (!token) return next(new Error('Authentication error'));
 
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const decoded = verifyToken(token);
             socket.userId = decoded.id;
 
             next();
@@ -59,11 +57,10 @@ const socketHandler = (io) => {
 
                 const userId = socket.userId;
 
-                // Only update messages that were sent by someone else
                 await MessageModel.updateMany(
                     {
                         _id: { $in: messageIds },
-                        sender: { $ne: userId }, // Not sent by current user
+                        sender: { $ne: userId },
                     },
                     { $set: { isSeen: true } }
                 );
@@ -76,7 +73,7 @@ const socketHandler = (io) => {
 
                 const decryptedMessages = updatedMessages.map((message) => ({
                     ...message.toObject(),
-                    content: crypto.AES.decrypt(message.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8),
+                    content: decryptMsg(message.content),
                 }));
 
                 io.to(chatId).emit('messages_seen_update', decryptedMessages);
@@ -111,14 +108,13 @@ const socketHandler = (io) => {
                 let encryptedMedia = [];
 
                 if (type === 'text') {
-                    encryptedContent = crypto.AES.encrypt(content, process.env.MSG_SECRET).toString();
+                    encryptedContent = encryptMsg(content);
                 } else if (type === 'media') {
                     encryptedMedia = media.map(({ url, type, caption }) => ({
                         url,
                         type,
                         caption: caption
-                            ? crypto.AES.encrypt(caption, process.env.MSG_SECRET).toString()
-                            : '',
+                            ? encryptMsg(caption) : '',
                     }));
                 }
 
@@ -136,16 +132,13 @@ const socketHandler = (io) => {
                     .populate('sender', '_id username');
 
                 if (populatedMessage.type === 'text') {
-                    populatedMessage.content = crypto.AES.decrypt(
-                        populatedMessage.content,
-                        process.env.MSG_SECRET
-                    ).toString(crypto.enc.Utf8);
+                    populatedMessage.content = decryptMsg(populatedMessage.content);
                 } else if (populatedMessage.type === 'media') {
                     populatedMessage.media = populatedMessage.media.map(({ url, type, caption }) => ({
                         url,
                         type,
                         caption: caption
-                            ? crypto.AES.decrypt(caption, process.env.MSG_SECRET).toString(crypto.enc.Utf8)
+                            ? decryptMsg(caption)
                             : '',
                     }));
                 }

@@ -1,14 +1,12 @@
-import jwt from 'jsonwebtoken';
 import User from '../models/UserModel.js';
-import dotenv from 'dotenv';
-dotenv.config();
+import { verifyToken } from '../utils/auth.js';
 
 export const authMiddleware = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer')) {
         const token = authHeader.split(' ')[1];
         try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const decoded = verifyToken(token);
 
             req.user = await User.findById(decoded.id).select('-password');
             next();

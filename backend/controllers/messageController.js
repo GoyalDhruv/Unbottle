@@ -1,9 +1,7 @@
-import crypto from 'crypto-js';
 import Message from '../models/MessageModel.js';
 import Chat from '../models/ChatModel.js';
 import User from '../models/UserModel.js';
-import dotenv from 'dotenv';
-dotenv.config();
+import { decryptMsg, encryptMsg } from '../utils/cryptoUtils.js';
 
 export const sendMessage = async (req, res) => {
     const { chatId, content, media = [], type } = req.body;
@@ -32,7 +30,7 @@ export const sendMessage = async (req, res) => {
 
         let encryptedContent = '';
         if (type === 'text') {
-            encryptedContent = crypto.AES.encrypt(content, process.env.MSG_SECRET).toString();
+            encryptedContent = encryptMsg(content);
         }
 
         let encryptedMedia = [];
@@ -41,7 +39,7 @@ export const sendMessage = async (req, res) => {
                 url,
                 type,
                 caption: caption
-                    ? crypto.AES.encrypt(caption, process.env.MSG_SECRET).toString()
+                    ? encryptMsg(content)
                     : '',
             }));
         }
@@ -59,16 +57,13 @@ export const sendMessage = async (req, res) => {
         const populatedMessage = await Message.findById(message._id).populate('sender', 'username _id');
 
         if (populatedMessage.type === 'text') {
-            populatedMessage.content = crypto.AES.decrypt(
-                populatedMessage.content,
-                process.env.MSG_SECRET
-            ).toString(crypto.enc.Utf8);
+            populatedMessage.content = decryptMsg(populatedMessage.content)
         } else if (populatedMessage.type === 'media') {
             populatedMessage.media = populatedMessage.media.map(({ url, type, caption }) => ({
                 url,
                 type,
                 caption: caption
-                    ? crypto.AES.decrypt(caption, process.env.MSG_SECRET).toString(crypto.enc.Utf8)
+                    ? decryptMsg(caption)
                     : '',
             }));
         }
@@ -127,10 +122,9 @@ export const getMessagesForChat = async (req, res) => {
             .populate('sender', 'username _id')
             .sort({ createdAt: 1 });
 
-        // console.log()
         const decryptedMessages = messages.map((message) => {
             if (message.type === 'text') {
-                const decryptedContent = crypto.AES.decrypt(message.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
+                const decryptedContent = decryptMsg(message.content);
                 return { ...message.toObject(), content: decryptedContent };
             }
             else if (message?.type === 'media') {
@@ -138,17 +132,12 @@ export const getMessagesForChat = async (req, res) => {
                     url,
                     type,
                     caption: caption
-                        ? crypto.AES.decrypt(caption, process.env.MSG_SECRET).toString(crypto.enc.Utf8)
+                        ? decryptMsg(caption)
                         : '',
                 }));
                 return { ...message.toObject(), media: decryptedMedia };
             }
         })
-
-        // const decryptedMessages = messages.map((message) => {
-        //     const decryptedContent = crypto.AES.decrypt(message.content, process.env.MSG_SECRET).toString(crypto.enc.Utf8);
-        //     return { ...message.toObject(), content: decryptedContent };
-        // });
 
         res.status(200).json({
             message: 'Messages fetched successfully',

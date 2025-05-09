@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getChatsByUser } from "../../services/chatService";
 import { useNavigate } from "react-router-dom";
-import { User2Icon } from "lucide-react";
+import { Image, User2Icon, Video } from "lucide-react";
 import { formatDateHeading, formatTime } from '../../utils/helper';
 import { getDataFromLocalStorage } from '../../utils/helper';
 import ChatLoader from "../../components/Loader/ChatLoader";
@@ -118,11 +118,28 @@ const Chats = () => {
                                     <User2Icon className="w-8 h-8" />
                                     <div>
                                         <p className="font-semibold text-lg">{otherUser?.username || 'User'}</p>
-                                        <p className={`text-sm text-gray-500 truncate max-w-[200px] ${chat?.unSeenCount > 0 ? 'font-bold ' : ''}`}>
-                                            {chat?.lastMessage
-                                                ? `${lastMessageSenderIsCurrentUser ? 'You: ' : `${otherUser?.username || 'User'}: `}${chat.lastMessage.content}`
-                                                : 'No Active Conversation.'}
+                                        <p className={`text-sm text-gray-500 truncate max-w-[200px] flex items-center gap-1 ${chat?.unSeenCount > 0 ? 'font-bold ' : ''}`}>
+                                            {chat?.lastMessage ? (
+                                                <>
+                                                    <span>
+                                                        {lastMessageSenderIsCurrentUser ? 'You: ' : `${otherUser?.username}: `}
+                                                    </span>
+                                                    <span>
+                                                        {chat.lastMessage?.type === 'text' ? (
+                                                            chat.lastMessage.content
+                                                        ) : (
+                                                            chat?.lastMessage?.content ?
+                                                                <Image size={16} />
+                                                                :
+                                                                <VideoIcon size={16} />
+                                                        )}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                'No Active Conversation.'
+                                            )}
                                         </p>
+
                                     </div>
                                 </div>
                                 <div className="text-gray-500 flex-column items-center">
