@@ -4,21 +4,26 @@ import ReactPlayer from "react-player";
 const MediaContent = ({ msg, openMediaModal }) => {
     const media = msg?.media || [];
 
-    const renderMediaItem = (item, idx) => {
-        const isImage = item.type === 'image';
+    const renderMedia = (item) => {
+        if (item.type === 'image') {
+            return <Image src={item.url} alt="" objectFit="cover" w="100%" h="100%" />;
+        } else {
+            return <ReactPlayer url={item.url} controls width="100%" height="100%" />;
+        }
+    };
 
+    const renderMediaItem = (item, idx) => {
         return (
             <Box
                 className='relative w-full overflow-hidden rounded-md cursor-pointer'
                 key={idx}
                 aspectRatio={1}
-                onClick={() => openMediaModal(media, idx)}
+                onClick={() => {
+                    const filteredMedia = media.filter(i => i.url !== item.url);
+                    openMediaModal([item, ...filteredMedia])
+                }}
             >
-                {isImage ? (
-                    <Image src={item.url} alt="" objectFit="cover" w="100%" h="100%" />
-                ) : (
-                    <ReactPlayer url={item.url} controls width="100%" height="100%" />
-                )}
+                {renderMedia(item)}
                 {idx === 3 && media.length > 4 && (
                     <Flex
                         className='absolute top-0 left-0 w-full h-full items-center justify-center text-white font-bold text-lg'
@@ -35,11 +40,7 @@ const MediaContent = ({ msg, openMediaModal }) => {
         const item = media[0];
         return (
             <Box mb={2} onClick={() => openMediaModal(media, 0)} className="cursor-pointer">
-                {item.type === 'image' ? (
-                    <Image src={item.url} alt="" objectFit="cover" borderRadius="md" />
-                ) : (
-                    <ReactPlayer url={item.url} controls width="100%" height="200px" />
-                )}
+                {renderMedia(item)}
                 {item.caption && <Text mt={1}>{item.caption}</Text>}
             </Box>
         );
@@ -52,12 +53,14 @@ const MediaContent = ({ msg, openMediaModal }) => {
         <>
             {/* Render media with captions */}
             {withCaption.map((item, idx) => (
-                <Box key={`captioned-${idx}`} mt={3} onClick={() => openMediaModal(media, idx)} className="cursor-pointer">
-                    {item.type === 'image' ? (
-                        <Image src={item.url} alt="" objectFit="cover" borderRadius="md" />
-                    ) : (
-                        <ReactPlayer url={item.url} controls width="100%" />
-                    )}
+                <Box key={`captioned-${idx}`} mt={3}
+                    onClick={() => {
+                        const filteredMedia = media.filter(i => i.url !== item.url);
+                        openMediaModal([item, ...filteredMedia])
+                    }}
+                    className="cursor-pointer"
+                >
+                    {renderMedia(item)}
                     <Text mt={1}>{item.caption}</Text>
                 </Box>
             ))}
@@ -72,4 +75,4 @@ const MediaContent = ({ msg, openMediaModal }) => {
     );
 };
 
-export default MediaContent
+export default MediaContent;
