@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getChatsByUser } from "../../services/chatService";
 import { useNavigate } from "react-router-dom";
-import { Image, User2Icon, Video } from "lucide-react";
+import { Image, User2Icon, VideoIcon } from "lucide-react";
 import { formatDateHeading, formatTime } from '../../utils/helper';
 import { getDataFromLocalStorage } from '../../utils/helper';
 import ChatLoader from "../../components/Loader/ChatLoader";
