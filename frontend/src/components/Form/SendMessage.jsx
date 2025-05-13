@@ -1,10 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, IconButton, Menu, MenuButton, MenuItem, MenuList, useDisclosure } from '@chakra-ui/react';
-import { Image as ImageIcon, Send } from 'lucide-react';
+import { Image as ImageIcon, Link, Send } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext';
 import { getDataFromLocalStorage } from '../../utils/helper';
-import { AttachmentIcon } from '@chakra-ui/icons';
 import toast from 'react-hot-toast';
 import MediaPreviewModal from '../Modal/MediaPreviewModal';
 
@@ -84,7 +83,7 @@ function SendMessage() {
                 <Menu placement="top-start">
                     <MenuButton
                         as={IconButton}
-                        icon={<AttachmentIcon />}
+                        icon={<Link size={18} />}
                         variant="outline"
                         className="!text-white !bg-transparent !border-none"
                     />

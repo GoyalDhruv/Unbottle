@@ -1,6 +1,6 @@
 import { Text, Image, Modal, ModalOverlay, ModalContent, ModalBody, IconButton } from '@chakra-ui/react';
-import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, DownloadIcon } from '@chakra-ui/icons';
 import ReactPlayer from 'react-player';
+import { ChevronLeft, ChevronRight, Download, X } from 'lucide-react';
 
 function CarouselModal({ selectedMedia, currentSlide, setCurrentSlide, onClose, isOpen }) {
 
@@ -13,12 +13,13 @@ function CarouselModal({ selectedMedia, currentSlide, setCurrentSlide, onClose, 
     };
 
     const handleDownload = () => {
-        const link = document.createElement('a');
-        link.href = selectedMedia[currentSlide]?.url;
-        link.download = `download-${Date.now()}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const media = selectedMedia[currentSlide];
+        if (!media || !media.url) {
+            console.error('No media available to open in a new tab');
+            return;
+        }
+
+        window.open(media.url, '_blank');
     };
 
     return (
@@ -28,14 +29,14 @@ function CarouselModal({ selectedMedia, currentSlide, setCurrentSlide, onClose, 
                 <ModalBody p={0} className="relative flex items-center justify-center h-full">
                     <IconButton
                         className='!absolute top-4 right-4 z-10 !rounded-full !text-white'
-                        icon={<CloseIcon boxSize={4} />}
+                        icon={<X size={22} />}
                         onClick={onClose}
                         bg="blackAlpha.600"
                         _hover={{ bg: "blackAlpha.700" }}
                     />
                     <IconButton
                         className='!absolute top-4 left-4 z-10 !rounded-full !text-white'
-                        icon={<DownloadIcon boxSize={4} />}
+                        icon={<Download size={22} />}
                         onClick={handleDownload}
                         bg="blackAlpha.600"
                         _hover={{ bg: "blackAlpha.700" }}
@@ -69,14 +70,14 @@ function CarouselModal({ selectedMedia, currentSlide, setCurrentSlide, onClose, 
                             <>
                                 <IconButton
                                     className='!absolute top-1/2 left-2 transform -translate-y-1/2 z-10 !rounded-full !text-white'
-                                    icon={<ChevronLeftIcon boxSize={6} />}
+                                    icon={<ChevronLeft size={22} />}
                                     onClick={goToPrev}
                                     bg="blackAlpha.600"
                                     _hover={{ bg: "blackAlpha.700" }}
                                 />
                                 <IconButton
                                     className='!absolute top-1/2 right-2 transform -translate-y-1/2 z-10 !rounded-full !text-white'
-                                    icon={<ChevronRightIcon boxSize={6} />}
+                                    icon={<ChevronRight size={22} />}
                                     onClick={goToNext}
                                     bg="blackAlpha.600"
                                     _hover={{ bg: "blackAlpha.700" }}

@@ -77,11 +77,10 @@ function ChatById() {
         if (!socket || !messages?.decryptedMessages) return;
 
         const unseenMessages = messages.decryptedMessages.filter(
-            (msg) => msg?.sender?._id !== currentUser._id && !msg.isSeen
+            (msg) => msg?.sender?._id !== currentUser._id && msg.isSeen === false
         );
 
         const unseenMessageIds = unseenMessages.map((msg) => msg._id);
-
         if (unseenMessageIds.length > 0) {
             socket.emit('messages_seen', {
                 messageIds: unseenMessageIds,
@@ -90,12 +89,17 @@ function ChatById() {
         }
 
         const handleCheckUpdateMsg = (msg) => {
+            console.log(msg)
             setMessages((prev) => ({
                 ...prev,
                 decryptedMessages: prev.decryptedMessages.map((message) =>
                     msg.find((newMessage) => newMessage._id === message._id) || message
                 ),
             }));
+            // setMessages((prev) => ({
+            //     ...prev,
+            //     decryptedMessages: [...prev.decryptedMessages, msg],
+            // }));
         }
 
         socket.on("messages_seen_update", handleCheckUpdateMsg)

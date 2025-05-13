@@ -1,8 +1,7 @@
-import React from 'react'
 import { getDataFromLocalStorage, getParticipant } from '../../utils/helper';
 import { IconButton, Menu, MenuButton, MenuItem, MenuList } from '@chakra-ui/react';
-import { ArrowBackIcon, HamburgerIcon } from '@chakra-ui/icons';
 import { blockUser, unblockUser } from '../../services/authService';
+import { ArrowLeft, MenuIcon } from 'lucide-react';
 
 function ChatHeader({ users, blockedData, getChatById }) {
 
@@ -32,7 +31,7 @@ function ChatHeader({ users, blockedData, getChatById }) {
             <button
                 onClick={() => window.history.back()}
             >
-                <ArrowBackIcon className="!w-6 !h-6 !text-[#726fbb]" />
+                <ArrowLeft className="!w-6 !h-6 !text-[#726fbb]" />
             </button>
 
             {/* username */}
@@ -45,7 +44,7 @@ function ChatHeader({ users, blockedData, getChatById }) {
                 <Menu placement="bottom-end">
                     <MenuButton
                         as={IconButton}
-                        icon={<HamburgerIcon />}
+                        icon={<MenuIcon />}
                         variant='outline'
                         className='!text-[#726fbb] !bg-[#f8f8ff]'
                     />

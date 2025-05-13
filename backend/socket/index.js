@@ -65,16 +65,26 @@ const socketHandler = (io) => {
                     { $set: { isSeen: true } }
                 );
 
-                // Fetch updated messages to emit
                 const updatedMessages = await MessageModel.find({
                     _id: { $in: messageIds },
                     sender: { $ne: userId }
                 }).populate('sender', '_id username');
 
-                const decryptedMessages = updatedMessages.map((message) => ({
-                    ...message.toObject(),
-                    content: decryptMsg(message.content),
-                }));
+                const decryptedMessages = updatedMessages.map((message) => {
+                    const decryptedMessage = { ...message._doc };
+
+                    if (message.type === 'text') {
+                        decryptedMessage.content = decryptMsg(message.content);
+                    } else if (message.type === 'media') {
+                        decryptedMessage.media = message.media.map(({ url, type, caption }) => ({
+                            url,
+                            type,
+                            caption: caption ? decryptMsg(caption) : '',
+                        }));
+                    }
+
+                    return decryptedMessage;
+                });
 
                 io.to(chatId).emit('messages_seen_update', decryptedMessages);
 

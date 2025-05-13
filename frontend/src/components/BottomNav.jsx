@@ -1,15 +1,15 @@
 import { Box, IconButton } from '@chakra-ui/react';
-import { ChatIcon, SearchIcon, PhoneIcon } from '@chakra-ui/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { MessageCircle, Phone, UserSearch } from 'lucide-react';
 
 const BottomNav = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
     const navItems = [
-        { icon: <ChatIcon />, path: '/app/chats' },
-        { icon: <SearchIcon />, path: '/app/find' },
-        { icon: <PhoneIcon />, path: '/app/calls' },
+        { icon: <MessageCircle size={20} />, path: '/app/chats' },
+        { icon: <UserSearch size={20} />, path: '/app/find' },
+        { icon: <Phone />, path: '/app/calls' },
     ];
 
     return (
