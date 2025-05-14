@@ -34,7 +34,8 @@ const Chats = () => {
     useEffect(() => {
         if (!socket) return;
 
-        const handleNewMessage = (newMessage) => {
+        const handleNewMessage = ({ newMessage, chatId }) => {
+            if (chatId !== newMessage.chat) return;
             setChats(prevChats => {
                 const updatedChats = prevChats.map(chat => {
                     if (chat._id === newMessage.chat) {

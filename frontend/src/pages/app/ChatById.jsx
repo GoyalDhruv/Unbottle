@@ -59,10 +59,12 @@ function ChatById() {
     useEffect(() => {
         if (!socket) return;
 
-        const handleIncomingMessage = (msg) => {
+        const handleIncomingMessage = ({ populatedMessage, chatId }) => {
+            console.log('qwer', populatedMessage);
+            if (chatId !== id) return
             setMessages((prev) => ({
                 ...prev,
-                decryptedMessages: [...prev.decryptedMessages, msg],
+                decryptedMessages: [...prev.decryptedMessages, populatedMessage],
             }));
         };
 
@@ -88,12 +90,13 @@ function ChatById() {
             });
         }
 
-        const handleCheckUpdateMsg = (msg) => {
-            console.log(msg)
+        const handleCheckUpdateMsg = ({ decryptedMessages, chatId }) => {
+
+            if (chatId !== id) return
             setMessages((prev) => ({
                 ...prev,
                 decryptedMessages: prev.decryptedMessages.map((message) =>
-                    msg.find((newMessage) => newMessage._id === message._id) || message
+                    decryptedMessages.find((newMessage) => newMessage._id === message._id) || message
                 ),
             }));
             // setMessages((prev) => ({
@@ -114,13 +117,15 @@ function ChatById() {
     useEffect(() => {
         if (!socket) return;
 
-        const handleTyping = ({ userId }) => {
+        const handleTyping = ({ userId, chatId }) => {
+            if (chatId !== id) return
             if (userId !== currentUser._id) {
                 setTypingUsers((prev) => [...new Set([...prev, userId])]);
             }
         };
 
-        const handleStopTyping = ({ userId }) => {
+        const handleStopTyping = ({ userId, chatId }) => {
+            if (chatId !== id) return
             setTypingUsers((prev) => prev.filter((id) => id !== userId));
         };
 
