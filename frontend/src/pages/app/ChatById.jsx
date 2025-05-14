@@ -60,7 +60,6 @@ function ChatById() {
         if (!socket) return;
 
         const handleIncomingMessage = ({ populatedMessage, chatId }) => {
-            console.log('qwer', populatedMessage);
             if (chatId !== id) return
             setMessages((prev) => ({
                 ...prev,
@@ -99,10 +98,6 @@ function ChatById() {
                     decryptedMessages.find((newMessage) => newMessage._id === message._id) || message
                 ),
             }));
-            // setMessages((prev) => ({
-            //     ...prev,
-            //     decryptedMessages: [...prev.decryptedMessages, msg],
-            // }));
         }
 
         socket.on("messages_seen_update", handleCheckUpdateMsg)

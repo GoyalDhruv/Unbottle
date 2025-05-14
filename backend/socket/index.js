@@ -86,7 +86,7 @@ const socketHandler = (io) => {
                     return decryptedMessage;
                 });
 
-                io.to(chatId).emit('messages_seen_update', {decryptedMessages,chatId});
+                io.to(chatId).emit('messages_seen_update', { decryptedMessages, chatId });
 
             } catch (error) {
                 console.error('❌ Error in messages_seen event:', error);
@@ -153,7 +153,7 @@ const socketHandler = (io) => {
                     }));
                 }
 
-                io.to(chatId).emit('message_received', {populatedMessage,chatId});
+                io.to(chatId).emit('message_received', { populatedMessage, chatId });
 
             } catch (error) {
                 console.error('❌ Error in send_message event:', error);

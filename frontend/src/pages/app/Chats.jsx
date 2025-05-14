@@ -34,19 +34,18 @@ const Chats = () => {
     useEffect(() => {
         if (!socket) return;
 
-        const handleNewMessage = ({ newMessage, chatId }) => {
-            if (chatId !== newMessage.chat) return;
+        const handleNewMessage = ({ populatedMessage, chatId }) => {
             setChats(prevChats => {
                 const updatedChats = prevChats.map(chat => {
-                    if (chat._id === newMessage.chat) {
-                        const isCurrentUserSender = newMessage.sender._id === currentUserId;
+                    if (chat._id === populatedMessage.chat) {
+                        const isCurrentUserSender = populatedMessage.sender._id === currentUserId;
                         const unSeenCount = !isCurrentUserSender
                             ? (chat.unSeenCount || 0) + 1
                             : chat.unSeenCount || 0;
 
                         return {
                             ...chat,
-                            lastMessage: newMessage,
+                            lastMessage: populatedMessage,
                             unSeenCount,
                             updatedAt: new Date()
                         };
@@ -55,19 +54,19 @@ const Chats = () => {
                 });
 
                 return [
-                    updatedChats.find(chat => chat._id === newMessage.chat),
-                    ...updatedChats.filter(chat => chat._id !== newMessage.chat)
+                    updatedChats.find(chat => chat._id === populatedMessage.chat),
+                    ...updatedChats.filter(chat => chat._id !== populatedMessage.chat)
                 ].filter(Boolean);
             });
         };
 
-        const handleMessagesSeen = (seenMessages) => {
-            if (!seenMessages.length) return;
+        const handleMessagesSeen = ({ decryptedMessages, chatId }) => {
+            if (!decryptedMessages.length) return;
 
-            const chatId = seenMessages[0].chat;
+            const newchatId = decryptedMessages[0].chat;
             setChats(prevChats =>
                 prevChats.map(chat =>
-                    chat._id === chatId
+                    chat._id === newchatId
                         ? { ...chat, unSeenCount: 0 }
                         : chat
                 )
